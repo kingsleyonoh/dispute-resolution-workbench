@@ -1,0 +1,27 @@
+# Dispute Resolution Workbench
+
+Dispute Resolution Workbench is a Clojure/Pedestal operations console for finance teams. It consolidates financial and contractual exceptions from sibling portfolio systems into a single tenant-scoped dispute queue with SLA clocks, explicit correlation review, Workflow Engine resolution playbooks, Notification Hub events, and immutable Datomic audit history.
+
+## Users
+CFOs, Heads of Finance Operations, supervisors, and operations analysts at B2B SaaS or manufacturing companies with multiple financial systems.
+
+## Architecture
+- Clojure 1.12, Pedestal 0.7, Datomic Pro, PostgreSQL 16, Redis 7.
+- Server-rendered Hiccup + HTMX UI with Tailwind CSS.
+- API key and session authentication both resolve to a mandatory current tenant.
+- External adapters are optional; manual disputes are the baseline product.
+
+## API Surface
+Primary routes include tenant registration/profile/key rotation, dispute CRUD and transitions, exception ingestion, correlations, counterparties, playbooks, SLA policies, ingestion sources/runs, audit log, health checks, and HTMX UI routes.
+
+## Integrations
+Consumes from Invoice Reconciliation, Contract Lifecycle, Transaction Reconciliation, and optional Webhook Ingestion Engine. Emits to Notification Hub and triggers Workflow Automation Engine.
+
+## Local Development
+- Install: `clojure -P`
+- Start infra: `docker compose up -d postgres redis`
+- Run app: `clojure -M:dev`
+- Test: `clojure -M:test`
+
+## Repository
+Private repo expected under `https://github.com/kingsleyonoh/dispute-resolution-workbench`.

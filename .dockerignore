@@ -1,0 +1,17 @@
+.git
+.agent/workflows
+.agent/guides
+.agent/agents
+.claude
+.yolo
+docs/build-journal
+docs/progress.md
+docs/yolo-inbox.md
+docs/*PRD*.md
+.env
+.env.*
+target
+.cpcache
+node_modules
+tmp
+*.log

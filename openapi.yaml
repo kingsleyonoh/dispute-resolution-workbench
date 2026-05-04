@@ -1,0 +1,119 @@
+openapi: 3.1.0
+info:
+  title: Dispute Resolution Workbench API
+  version: 1.0.0
+servers:
+  - url: https://disputes.kingsleyonoh.com
+paths:
+  /api/tenants/register:
+    post:
+      summary: Register a tenant
+      responses:
+        "200":
+          description: Tenant and one-time API key
+  /api/tenants/me:
+    get:
+      summary: Read current tenant profile
+      security:
+        - ApiKeyAuth: []
+      responses:
+        "200":
+          description: Tenant profile
+  /api/disputes:
+    get:
+      summary: List disputes
+      security:
+        - ApiKeyAuth: []
+      responses:
+        "200":
+          description: Paginated disputes
+    post:
+      summary: Create a dispute
+      security:
+        - ApiKeyAuth: []
+      responses:
+        "200":
+          description: Created dispute
+  /api/disputes/{id}:
+    get:
+      summary: Read dispute detail
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Dispute with exceptions and timeline
+  /api/disputes/{id}/assign:
+    patch:
+      summary: Assign a dispute
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Updated dispute
+  /api/disputes/{id}/transition:
+    patch:
+      summary: Transition dispute status
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Updated dispute
+  /api/exceptions:
+    get:
+      summary: List exceptions
+      security:
+        - ApiKeyAuth: []
+      responses:
+        "200":
+          description: Exceptions
+    post:
+      summary: Ingest a manual exception
+      security:
+        - ApiKeyAuth: []
+      responses:
+        "200":
+          description: Exception and dispute decision
+  /api/exceptions/from-hub:
+    post:
+      summary: Ingest a Hub-routed exception event
+      responses:
+        "200":
+          description: Exception and dispute decision
+  /api/correlations:
+    get:
+      summary: List correlation candidates
+      security:
+        - ApiKeyAuth: []
+      responses:
+        "200":
+          description: Correlation candidates
+  /api/health:
+    get:
+      summary: Liveness health check
+      responses:
+        "200":
+          description: App is up
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key

@@ -1,0 +1,36 @@
+{
+  "name": "dispute-resolution-workbench",
+  "description": "Tenant-scoped dispute operations API for finance exceptions.",
+  "tools": [
+    {
+      "name": "list_disputes",
+      "description": "List disputes for the authenticated tenant.",
+      "method": "GET",
+      "path": "/api/disputes"
+    },
+    {
+      "name": "create_dispute",
+      "description": "Create a manual dispute.",
+      "method": "POST",
+      "path": "/api/disputes"
+    },
+    {
+      "name": "read_dispute",
+      "description": "Read dispute detail with exceptions and timeline.",
+      "method": "GET",
+      "path": "/api/disputes/{id}"
+    },
+    {
+      "name": "ingest_exception",
+      "description": "Ingest a manual exception and create or correlate a dispute.",
+      "method": "POST",
+      "path": "/api/exceptions"
+    },
+    {
+      "name": "list_correlations",
+      "description": "List pending correlation candidates.",
+      "method": "GET",
+      "path": "/api/correlations"
+    }
+  ]
+}

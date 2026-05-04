@@ -1,0 +1,48 @@
+services:
+  app:
+    image: ghcr.io/kingsleyonoh/dispute-resolution-workbench:latest
+    restart: unless-stopped
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - ecosystem
+      - internal
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.dispute-resolution-workbench.rule=Host(`disputes.kingsleyonoh.com`)
+      - traefik.http.routers.dispute-resolution-workbench.entrypoints=websecure
+      - traefik.http.routers.dispute-resolution-workbench.tls.certresolver=letsencrypt
+      - traefik.http.services.dispute-resolution-workbench.loadbalancer.server.port=3049
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: datomic_storage
+      POSTGRES_USER: drw
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-drw}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - internal
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
+    networks:
+      - internal
+
+volumes:
+  postgres-data:
+  redis-data:
+
+networks:
+  internal:
+  ecosystem:
+    external: true
