@@ -10,7 +10,11 @@
     (is (= "jdbc:postgresql://localhost:5432/datomic_storage"
            (:database-url cfg)))
     (is (= "redis://localhost:6379/0" (:redis-url cfg)))
-    (is (string? (:session-secret cfg)))))
+    (is (string? (:session-secret cfg)))
+    (is (= false (:invoice-recon-enabled cfg)))
+    (is (= 600 (:invoice-recon-poll-interval-seconds cfg)))
+    (is (= false (:transaction-recon-enabled cfg)))
+    (is (= 900 (:transaction-recon-poll-interval-seconds cfg)))))
 
 (deftest rejects-missing-required-runtime-config
   (testing "missing required env vars fail during startup config load"

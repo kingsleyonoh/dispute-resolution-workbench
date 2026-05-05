@@ -139,7 +139,9 @@
           (if (< attempt max-attempts)
             (do (sleep-before-retry cfg attempt)
                 (recur (inc attempt)))
-            (do (mark-failure! circuit key (:failure-threshold cfg))
+            (do (mark-failure! circuit key
+                               (get cfg :failure-threshold
+                                    default-failure-threshold))
                 (failure-result cfg attempt (exception-reason exception)
                                 {:exception-message (ex-message exception)})))
 

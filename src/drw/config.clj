@@ -11,6 +11,9 @@
     (catch NumberFormatException ex
       (throw (ex-info "PORT must be an integer" {:value value} ex)))))
 
+(defn- env-true? [env key]
+  (= "true" (get env key)))
+
 (defn- parse-env-line [line]
   (let [trimmed (str/trim line)]
     (when-not (or (str/blank? trimmed) (str/starts-with? trimmed "#"))
@@ -42,7 +45,17 @@
    :notification-hub-api-key (get env "NOTIFICATION_HUB_API_KEY")
    :workflow-engine-enabled (= "true" (get env "WORKFLOW_ENGINE_ENABLED"))
    :workflow-engine-url (get env "WORKFLOW_ENGINE_URL")
-   :workflow-engine-api-key (get env "WORKFLOW_ENGINE_API_KEY")})
+   :workflow-engine-api-key (get env "WORKFLOW_ENGINE_API_KEY")
+   :invoice-recon-enabled (env-true? env "INVOICE_RECON_ENABLED")
+   :invoice-recon-url (get env "INVOICE_RECON_URL")
+   :invoice-recon-api-key (get env "INVOICE_RECON_API_KEY")
+   :invoice-recon-poll-interval-seconds
+   (parse-port (get env "INVOICE_RECON_POLL_INTERVAL_SECONDS" "600"))
+   :transaction-recon-enabled (env-true? env "TRANSACTION_RECON_ENABLED")
+   :transaction-recon-url (get env "TRANSACTION_RECON_URL")
+   :transaction-recon-api-key (get env "TRANSACTION_RECON_API_KEY")
+   :transaction-recon-poll-interval-seconds
+   (parse-port (get env "TRANSACTION_RECON_POLL_INTERVAL_SECONDS" "900"))})
 
 (defn load-config
   ([] (load-config {:env (System/getenv)}))
