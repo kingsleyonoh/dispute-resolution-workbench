@@ -64,7 +64,12 @@
    :transaction-recon-url (get env "TRANSACTION_RECON_URL")
    :transaction-recon-api-key (get env "TRANSACTION_RECON_API_KEY")
    :transaction-recon-poll-interval-seconds
-   (parse-port (get env "TRANSACTION_RECON_POLL_INTERVAL_SECONDS" "900"))})
+   (parse-port (get env "TRANSACTION_RECON_POLL_INTERVAL_SECONDS" "900"))
+   :webhook-engine-enabled (env-true? env "WEBHOOK_ENGINE_ENABLED")
+   :webhook-engine-url (get env "WEBHOOK_ENGINE_URL")
+   :webhook-engine-api-key (get env "WEBHOOK_ENGINE_API_KEY")
+   :webhook-engine-dlq-poll-interval-seconds
+   (parse-port (get env "WEBHOOK_ENGINE_DLQ_POLL_INTERVAL_SECONDS" "1800"))})
 
 (defn load-config
   ([] (load-config {:env (System/getenv)}))

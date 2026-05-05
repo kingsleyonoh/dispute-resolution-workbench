@@ -51,7 +51,9 @@
    :source-system (:source-system cfg)})
 
 (defn- circuit-key [cfg]
-  [(:tenant-id cfg) (:source-system cfg)])
+  (cond-> [(:tenant-id cfg) (:source-system cfg)]
+    (not (contains? cfg :circuit))
+    (conj (System/identityHashCode (:http-send-fn cfg)))))
 
 (defn- circuit-open? [circuit key]
   (= :open (:status (get @circuit key))))
