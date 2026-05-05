@@ -51,6 +51,15 @@
    :invoice-recon-api-key (get env "INVOICE_RECON_API_KEY")
    :invoice-recon-poll-interval-seconds
    (parse-port (get env "INVOICE_RECON_POLL_INTERVAL_SECONDS" "600"))
+   :contract-lifecycle-enabled (env-true? env "CONTRACT_LIFECYCLE_ENABLED")
+   :contract-lifecycle-url (get env "CONTRACT_LIFECYCLE_URL")
+   :contract-lifecycle-api-key (get env "CONTRACT_LIFECYCLE_API_KEY")
+   :contract-lifecycle-backfill-interval-seconds
+   (parse-port (get env "CONTRACT_LIFECYCLE_BACKFILL_INTERVAL_SECONDS" "900"))
+   :nats-enabled (env-true? env "NATS_ENABLED")
+   :nats-url (get env "NATS_URL")
+   :nats-creds-path (get env "NATS_CREDS_PATH")
+   :nats-stream-name (get env "NATS_STREAM_NAME" "ECOSYSTEM_EVENTS")
    :transaction-recon-enabled (env-true? env "TRANSACTION_RECON_ENABLED")
    :transaction-recon-url (get env "TRANSACTION_RECON_URL")
    :transaction-recon-api-key (get env "TRANSACTION_RECON_API_KEY")

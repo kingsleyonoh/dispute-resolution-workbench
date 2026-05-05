@@ -13,6 +13,11 @@
     (is (string? (:session-secret cfg)))
     (is (= false (:invoice-recon-enabled cfg)))
     (is (= 600 (:invoice-recon-poll-interval-seconds cfg)))
+    (is (= false (:contract-lifecycle-enabled cfg)))
+    (is (= 900 (:contract-lifecycle-backfill-interval-seconds cfg)))
+    (is (= false (:nats-enabled cfg)))
+    (is (= "nats://localhost:4222" (:nats-url cfg)))
+    (is (= "ECOSYSTEM_EVENTS" (:nats-stream-name cfg)))
     (is (= false (:transaction-recon-enabled cfg)))
     (is (= 900 (:transaction-recon-poll-interval-seconds cfg)))))
 
