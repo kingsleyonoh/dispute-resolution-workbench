@@ -5,7 +5,7 @@
 > Source PRD: `docs/dispute-resolution-workbench_prd.md`
 
 ## Project Summary
-Single-queue dispute operations system for finance teams. It consolidates exceptions from Invoice Reconciliation, Contract Lifecycle, Transaction Reconciliation, and optional Webhook delivery failures into a tenant-scoped workflow with SLA tracking, explicit correlation review, Workflow Engine resolution playbooks, Notification Hub events, and immutable Datomic audit history.
+Single-queue dispute operations system for finance teams. It consolidates manual exceptions plus future feeds from Invoice Reconciliation, Contract Lifecycle, Transaction Reconciliation, and optional Webhook delivery failures into a tenant-scoped workflow with SLA tracking, explicit correlation review, Workflow Engine resolution playbooks, Notification Hub events, and immutable Datomic audit history.
 
 ## Tech Stack
 | Layer | Technology |
@@ -50,6 +50,7 @@ Single-queue dispute operations system for finance teams. It consolidates except
 | `src/drw/system.clj` | Datomic Local, Datomic SQL storage, Postgres, and Redis smoke helpers |
 | `src/drw/setup.clj` | First-run setup smoke command |
 | `src/drw/db/` | Datomic schema loading, status transition validation, and tenant-scoped collection helpers |
+| `src/drw/domain/` | Process-local core domain layer for counterparties, disputes, manual exceptions, timeline rows, and audit rows |
 | `src/drw/fixtures.clj` | Resource-backed tenant fixture loader with identity-field validation |
 | `src/drw/tenants/` | Tenant identity snapshot capture for config-driven surfaces |
 | `src/drw/templates/` | Strict template token lookup helpers |
@@ -96,7 +97,7 @@ See `.env.example`. Runtime-required keys enforced by `drw.config`: `APP_ENV`, `
 API requests use `X-API-Key` prefix lookup and constant-time hash comparison. Public routes are explicit in `drw.http.interceptors.auth/public-routes`. Protected routes require `:current-tenant`, rate limits are applied per route, request ids are propagated through `X-Request-Id`, and tenant lifecycle mutations append audit rows. UI requests will use buddy-auth sessions that resolve to the same tenant context. Cross-tenant misses return 404.
 
 ## Data Contracts
-Tenant fixture data lives in `resources/fixtures/tenants.edn` and must keep at least two tenants with distinct identity literals. Tenant snapshot generation uses `drw.db.scope/entity-by-tenant-id` and fails closed on missing tenant identity fields. Template lookup uses strict undefined behavior through `drw.templates.strict-fetch`; missing tokens throw instead of rendering empty strings. Audit rows are append-only insert maps built by `drw.audit.recorder`.
+Tenant fixture data lives in `resources/fixtures/tenants.edn` and must keep at least two tenants with distinct identity literals. Tenant snapshot generation uses `drw.db.scope/entity-by-tenant-id` and fails closed on missing tenant identity fields. Template lookup uses strict undefined behavior through `drw.templates.strict-fetch`; missing tokens throw instead of rendering empty strings. Audit rows are append-only insert maps built by `drw.audit.recorder`. Batch 005 domain functions use process-local atoms in `drw.domain.state` for counterparties, disputes, manual exceptions, timeline entries, and audit rows until durable Datomic mutation wiring is introduced.
 
 ## Deep References
 | Area | Planned path |
@@ -105,6 +106,7 @@ Tenant fixture data lives in `resources/fixtures/tenants.edn` and must keep at l
 | Config loading | `.agent/knowledge/modules/src-drw-config.md` |
 | System checks | `.agent/knowledge/modules/src-drw-system.md` |
 | Datomic schema and tenant scope | `.agent/knowledge/modules/src-drw-db.md` |
+| Core domain queue | `.agent/knowledge/modules/src-drw-domain.md` |
 | Tenant fixtures | `.agent/knowledge/modules/src-drw-fixtures.md` |
 | Tenant snapshots | `.agent/knowledge/modules/src-drw-tenants.md` |
 | Strict template lookup | `.agent/knowledge/modules/src-drw-templates.md` |
