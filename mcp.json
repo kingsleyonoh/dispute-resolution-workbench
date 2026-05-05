@@ -87,6 +87,30 @@
       "path": "/api/exceptions"
     },
     {
+      "name": "list_correlations",
+      "description": "List tenant-scoped correlation candidates.",
+      "method": "GET",
+      "path": "/api/correlations"
+    },
+    {
+      "name": "get_correlation",
+      "description": "Read a correlation candidate with hydrated exception and target dispute details.",
+      "method": "GET",
+      "path": "/api/correlations/{id}"
+    },
+    {
+      "name": "accept_correlation",
+      "description": "Accept a pending correlation and attach its exception to the target dispute.",
+      "method": "POST",
+      "path": "/api/correlations/{id}/accept"
+    },
+    {
+      "name": "reject_correlation",
+      "description": "Reject a pending correlation without attaching its exception.",
+      "method": "POST",
+      "path": "/api/correlations/{id}/reject"
+    },
+    {
       "name": "list_counterparties",
       "description": "List tenant-scoped counterparties.",
       "method": "GET",
