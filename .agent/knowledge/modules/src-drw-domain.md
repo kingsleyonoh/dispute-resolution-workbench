@@ -25,7 +25,7 @@ Owns the in-memory domain data abstraction for the core manual queue: counterpar
 
 - `test/drw/domain/core_queue_test.clj` covers two-tenant isolation, duplicate source refs, illegal dispute transitions, terminal attach rejection, timeline rows, and audit rows.
 - `test/drw/domain/correlator_test.clj` covers strong-signal scoring, business-signal review candidates, weak candidate filtering, cross-tenant collision rejection, and stable tie ordering.
-- `test/drw/domain/ingestion_pipeline_test.clj` covers unmatched dispute creation, duplicate source-ref rejection before correlation side effects, pending candidates, opt-in auto-merge, and cross-tenant correlation rejection.
+- `test/drw/domain/ingestion_pipeline_test.clj` covers unmatched dispute creation, duplicate source-ref rejection without extra audit/correlation side effects, source-ref uniqueness scoped by tenant and source system, pending candidates, opt-in auto-merge, and cross-tenant source/entity collision rejection.
 - `test/drw/domain/ingestion_sources_test.clj` covers default source materialization, tenant isolation, settings saves, disabled/failure pull-now results, cursor updates, source refs, and run filters.
 - Correlation review behavior is covered through `test/drw/api/workbench_handlers_test.clj` and real HTTP E2E tests: pending list/detail, cross-tenant 404, accept attach side effects, duplicate terminal rejection, and reject-without-attach.
 - `test/drw/domain/reports_test.clj` covers tenant-scoped dispute audit PDF-source rendering, cross-tenant fail-closed behavior, and tenant identity leakage checks.

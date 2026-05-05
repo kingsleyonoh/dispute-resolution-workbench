@@ -15,7 +15,7 @@ Owns offline jobs that run domain maintenance, adapter polling, and event ingest
 - `src/drw/jobs/webhook_engine_dlq_poll.clj` - builds tenant/source config from Webhook Engine env values and runs the DLQ adapter with adapter actor metadata.
 - `src/drw/domain/sla.clj` - finds overdue non-terminal disputes, claims each SLA breach idempotently, appends timeline/audit rows, and emits the Notification Hub event helper.
 - `test/drw/domain/sla_test.clj` - covers overdue detection, idempotent breach marking, terminal dispute exclusion, and Hub-disabled behavior.
-- `test/drw/jobs/reconciliation_poll_test.clj` - covers adapter poll storage, duplicate-source-ref skips, disabled runs, upstream failure isolation, and tenant isolation.
+- `test/drw/jobs/reconciliation_poll_test.clj` - covers adapter poll storage, duplicate-source-ref skips including duplicates within one poll, disabled runs, upstream failure isolation across tenants/sources, tenant isolation, and source-system-scoped dedupe.
 - `test/drw/jobs/contract_lifecycle_test.clj` - covers Contract Lifecycle backfill, disabled/failure behavior, NATS subscription handling, duplicate skipping, tenant mismatch rejection, and cross-tenant source-ref isolation.
 - `test/drw/jobs/webhook_engine_dlq_poll_test.clj` - covers DLQ job storage, disabled/failure behavior, duplicate skipping, cursor preservation, and cross-tenant source-ref isolation.
 
@@ -27,7 +27,7 @@ Owns offline jobs that run domain maintenance, adapter polling, and event ingest
 ## Tests
 
 - Domain SLA tests verify one breach per dispute/due-at pair, audit/timeline side effects, and ignored terminal disputes.
-- Reconciliation, contract, and Webhook Engine ingestion tests verify successful runs route through domain ingestion, failed upstream runs do not throw or store partial rows, disabled runs preserve cursors where applicable, duplicate source refs are skipped per tenant, tenant-mismatched contract events reject, and Tenant A/Tenant B listings stay isolated.
+- Reconciliation, contract, and Webhook Engine ingestion tests verify successful runs route through domain ingestion, failed upstream runs do not throw or store partial rows, disabled runs preserve cursors where applicable, duplicate source refs are skipped per tenant and source system, duplicate rows in the same poll do not create extra audit/correlation side effects, tenant-mismatched contract events reject, and Tenant A/Tenant B listings stay isolated.
 
 ## Cross-references
 

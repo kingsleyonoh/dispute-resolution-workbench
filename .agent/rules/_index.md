@@ -25,10 +25,6 @@
 
 | File | Read when working on… |
 |------|----------------------|
-| `auth_rules.md` | Authentication, sessions, permissions |
-| `db_rules.md` | Database, migrations, queries |
-| `api_rules.md` | API endpoints, serializers, validation |
-| `jobs_rules.md` | Background jobs, queues, scheduling |
 
 > Domain rules are created by `/bootstrap` only when a domain has 5+ concentrated conventions in this project. If a file isn't listed in the directory listing, the corresponding rules live in `CODING_STANDARDS.md`.
 
