@@ -3,6 +3,7 @@
             [drw.domain.disputes :as disputes]
             [drw.domain.exceptions :as exceptions]
             [drw.ui.correlations :as correlation-page]
+            [drw.ui.ingestion :as ingestion-page]
             [drw.ui.layout :as layout]))
 
 (def statuses
@@ -20,6 +21,8 @@
     "Counterparties"]
    [:a {:href "/correlations" :class "font-medium text-slate-700"}
     "Correlations"]
+   [:a {:href "/settings/ingestion" :class "font-medium text-slate-700"}
+    "Ingestion"]
    [:form {:method "post" :action "/logout"}
     [:button {:class "text-slate-500"} "Sign out"]]])
 
@@ -247,3 +250,7 @@
 (defn correlations-page [tenant-id]
   (shell "Correlation queue"
          (correlation-page/queue-section tenant-id)))
+
+(defn ingestion-settings-page [tenant-id cfg]
+  (shell "Ingestion settings"
+         (ingestion-page/settings-section tenant-id cfg)))

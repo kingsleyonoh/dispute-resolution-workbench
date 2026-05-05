@@ -204,3 +204,70 @@
         (is (str/includes? (:body detail) "correlation accepted")))
       (finally
         (server/stop! srv)))))
+
+(deftest operator-manages-ingestion-settings-through-ui-over-http
+  (let [port 31557
+        base (str "http://127.0.0.1:" port)
+        srv (server/start!
+             {:port port
+              :api-key-prefix "drw_live_"
+              :self-registration-enabled true
+              :invoice-recon-enabled true
+              :invoice-recon-url "https://invoice.example.invalid"
+              :invoice-recon-api-key "example_key"
+              :invoice-recon-poll-interval-seconds 600
+              :ingestion-http-send-fns
+              {:invoice-recon
+               (fn [_]
+                 {:status 200
+                  :body {:discrepancies
+                         [{:invoice_id "INV-UI-PULL"
+                           :vendor_id "vendor-7"
+                           :discrepancy_amount_cents 4500
+                           :currency "EUR"
+                           :observed_at
+                           #inst "2026-05-05T10:00:00.000-00:00"}]
+                         :next_cursor "cursor-ui"}})}
+              :ingestion-max-attempts 1})]
+    (try
+      (store/reset-store!)
+      (domain-state/reset-store!)
+      (ratelimit/reset-limits!)
+      (let [registered (request "POST" (str base "/api/tenants/register")
+                                "{\"name\":\"Ingestion UI\"}"
+                                {"Content-Type" "application/json"})
+            api-key (json-string (:body registered) "apiKey")
+            settings (request "GET" (str base "/settings/ingestion")
+                              nil {"X-API-Key" api-key})
+            source-id (second (re-find #"/settings/ingestion/([^/]+)/pull-now"
+                                       (:body settings)))
+            disabled (form (str base "/settings/ingestion")
+                           {:source_system "invoice-recon"
+                            :base_url "https://invoice.example.invalid"
+                            :poll_interval_seconds "600"}
+                           api-key)
+            disabled-run (form
+                          (str base "/settings/ingestion/" source-id
+                               "/pull-now")
+                          {} api-key)
+            enabled (form (str base "/settings/ingestion")
+                          {:source_system "invoice-recon"
+                           :is_enabled "true"
+                           :base_url "https://invoice.example.invalid"
+                           :poll_interval_seconds "600"}
+                          api-key)
+            pulled (form
+                    (str base "/settings/ingestion/" source-id "/pull-now")
+                    {} api-key)
+            after (request "GET" (str base "/settings/ingestion")
+                           nil {"X-API-Key" api-key})]
+        (is (= 200 (:status settings)))
+        (is (str/includes? (:body settings) "Ingestion settings"))
+        (is (= 303 (:status disabled)))
+        (is (= 303 (:status disabled-run)))
+        (is (= 303 (:status enabled)))
+        (is (= 303 (:status pulled)))
+        (is (str/includes? (:body after) "INV-UI-PULL"))
+        (is (str/includes? (:body after) "succeeded")))
+      (finally
+        (server/stop! srv)))))

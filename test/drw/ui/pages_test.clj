@@ -5,6 +5,7 @@
             [drw.domain.counterparties :as counterparties]
             [drw.domain.disputes :as disputes]
             [drw.domain.exceptions :as exceptions]
+            [drw.domain.ingestion-sources :as ingestion]
             [drw.domain.state :as state]
             [drw.fixtures :as fixtures]
             [drw.ui.pages :as pages]))
@@ -94,3 +95,23 @@
     (is (str/includes? queue-html "/correlations/"))
     (is (str/includes? queue-html "/accept"))
     (is (str/includes? queue-html "/reject"))))
+
+(deftest renders-ingestion-settings-with-source_controls_and_runs
+  (state/reset-store!)
+  (let [source (first (ingestion/list-sources
+                       tenant-id
+                       {:invoice-recon-enabled false
+                        :invoice-recon-poll-interval-seconds 600}))
+        run (ingestion/pull-now!
+             tenant-id
+             (:ingestion-source/id source)
+             {:invoice-recon-enabled false})
+        settings-html (html (pages/ingestion-settings-page tenant-id {}))]
+    (is (= :disabled (:ingestion-run/status run)))
+    (is (str/includes? settings-html "Ingestion settings"))
+    (is (str/includes? settings-html "Invoice Reconciliation"))
+    (is (str/includes? settings-html "name=\"source_system\""))
+    (is (str/includes? settings-html "name=\"is_enabled\""))
+    (is (str/includes? settings-html "/settings/ingestion/"))
+    (is (str/includes? settings-html "/pull-now"))
+    (is (str/includes? settings-html "disabled"))))

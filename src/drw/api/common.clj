@@ -34,7 +34,8 @@
                       text))))))
 
 (defn value [m & ks]
-  (some #(get m %) ks))
+  (when-let [k (first (filter #(contains? m %) ks))]
+    (get m k)))
 
 (defn uuid-value [value]
   (cond
@@ -83,6 +84,7 @@
       :exception/not-found (not-found "Exception not found")
       :correlation/not-found (not-found "Correlation not found")
       :counterparty/not-found (not-found "Counterparty not found")
+      :ingestion-source/not-found (not-found "Ingestion source not found")
       :exception/duplicate-source-ref (conflict message)
       :counterparty/duplicate-normalized-name (conflict message)
       :illegal-status-transition (illegal-transition message)

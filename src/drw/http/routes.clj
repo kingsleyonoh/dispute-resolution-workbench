@@ -3,6 +3,7 @@
             [drw.api.correlations :as correlations]
             [drw.api.disputes :as disputes]
             [drw.api.exceptions :as exceptions]
+            [drw.api.ingestion :as ingestion]
             [drw.api.tenants :as tenants]
             [drw.http.handlers :as handlers]
             [drw.http.interceptors.audit :as audit]
@@ -66,6 +67,15 @@
        ["/correlations/:id/reject" :post
         (page-chain ui/reject-correlation)
         :route-name :ui-correlations-reject]
+       ["/settings/ingestion" :get
+        (page-chain (ui/ingestion-settings cfg))
+        :route-name :ui-ingestion-settings]
+       ["/settings/ingestion" :post
+        (page-chain (ui/save-ingestion-settings cfg))
+        :route-name :ui-ingestion-save]
+       ["/settings/ingestion/:id/pull-now" :post
+        (page-chain (ui/pull-ingestion-now cfg))
+        :route-name :ui-ingestion-pull-now]
        ["/api/health" :get (api-chain cfg handlers/health) :route-name :health]
        ["/api/tenants/register" :post
         (api-chain cfg (tenants/register-handler cfg))
@@ -118,6 +128,18 @@
        ["/api/correlations/:id/reject" :post
         (api-chain cfg (correlations/reject-handler cfg))
         :route-name :correlations-reject]
+       ["/api/ingestion-sources" :get
+        (api-chain cfg (ingestion/list-sources-handler cfg))
+        :route-name :ingestion-sources-list]
+       ["/api/ingestion-sources" :post
+        (api-chain cfg (ingestion/save-source-handler cfg))
+        :route-name :ingestion-sources-save]
+       ["/api/ingestion-sources/:id/pull-now" :post
+        (api-chain cfg (ingestion/pull-now-handler cfg))
+        :route-name :ingestion-sources-pull-now]
+       ["/api/ingestion-runs" :get
+        (api-chain cfg (ingestion/list-runs-handler cfg))
+        :route-name :ingestion-runs-list]
        ["/api/counterparties" :get
         (api-chain cfg (counterparties/list-handler cfg))
         :route-name :counterparties-list]

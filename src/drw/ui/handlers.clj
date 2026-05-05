@@ -4,6 +4,7 @@
             [drw.domain.correlations :as correlations]
             [drw.domain.disputes :as disputes]
             [drw.domain.exceptions :as exceptions]
+            [drw.domain.ingestion-sources :as ingestion]
             [drw.tenants.store :as store]
             [drw.ui.pages :as pages]
             [drw.ui.request :as ui-req]
@@ -196,3 +197,37 @@
    (fn [tenant]
      (correlations/reject! (:tenant/id tenant) (path-id request) (actor tenant))
      (redirect "/correlations"))))
+
+(defn ingestion-settings [cfg]
+  (fn [request]
+    (require-tenant
+     request
+     (fn [tenant]
+       (html (pages/ingestion-settings-page (:tenant/id tenant) cfg))))))
+
+(defn- ingestion-settings-attrs [form]
+  {:enabled? (= "true" (:is-enabled form))
+   :base-url (:base-url form)
+   :poll-interval-seconds (ui-req/long-value
+                           (:poll-interval-seconds form))})
+
+(defn save-ingestion-settings [cfg]
+  (fn [request]
+    (require-tenant
+     request
+     (fn [tenant]
+       (let [form (ui-req/parse-form request)]
+         (ingestion/save-settings-by-system!
+          (:tenant/id tenant)
+          (ui-req/keyword-value (:source-system form))
+          (ingestion-settings-attrs form)
+          cfg)
+         (redirect "/settings/ingestion"))))))
+
+(defn pull-ingestion-now [cfg]
+  (fn [request]
+    (require-tenant
+     request
+     (fn [tenant]
+       (ingestion/pull-now! (:tenant/id tenant) (path-id request) cfg)
+       (redirect "/settings/ingestion")))))

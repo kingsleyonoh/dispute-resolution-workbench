@@ -20,6 +20,12 @@
            (:ui-counterparties-list routes-by-name)))
     (is (= {:path "/correlations" :method :get}
            (:ui-correlations-list routes-by-name)))
+    (is (= {:path "/settings/ingestion" :method :get}
+           (:ui-ingestion-settings routes-by-name)))
+    (is (= {:path "/settings/ingestion" :method :post}
+           (:ui-ingestion-save routes-by-name)))
+    (is (= {:path "/settings/ingestion/:id/pull-now" :method :post}
+           (:ui-ingestion-pull-now routes-by-name)))
     (is (= {:path "/api/tenants/register" :method :post}
            (:tenant-register routes-by-name)))
     (is (= {:path "/api/tenants/me" :method :get}
@@ -40,6 +46,14 @@
            (:correlations-list routes-by-name)))
     (is (= {:path "/api/correlations/:id/accept" :method :post}
            (:correlations-accept routes-by-name)))
+    (is (= {:path "/api/ingestion-sources" :method :get}
+           (:ingestion-sources-list routes-by-name)))
+    (is (= {:path "/api/ingestion-sources" :method :post}
+           (:ingestion-sources-save routes-by-name)))
+    (is (= {:path "/api/ingestion-sources/:id/pull-now" :method :post}
+           (:ingestion-sources-pull-now routes-by-name)))
+    (is (= {:path "/api/ingestion-runs" :method :get}
+           (:ingestion-runs-list routes-by-name)))
     (is (= {:path "/api/counterparties" :method :get}
            (:counterparties-list routes-by-name)))))
 

@@ -26,6 +26,7 @@
    :exceptions-stored (get counts :stored 0)
    :exceptions-skipped (get counts :skipped 0)
    :exceptions-rejected (get counts :rejected 0)
+   :source-refs (mapv :source-ref (:exceptions poll-result))
    :cursor (:cursor poll-result)
    :error nil})
 
@@ -39,6 +40,7 @@
        :exceptions-stored 0
        :exceptions-skipped 0
        :exceptions-rejected 0
+       :source-refs []
        :cursor (:cursor opts)
        :error (:error poll-result)}
       (let [counts (store-exceptions!

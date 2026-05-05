@@ -79,3 +79,36 @@
     (cond-> {:correlation (correlation candidate)}
       exception-entity (assoc :exception (exception exception-entity))
       dispute-entity (assoc :targetDispute (dispute dispute-entity)))))
+
+(defn ingestion-source [entity]
+  {:id (str (:ingestion-source/id entity))
+   :tenantId (str (:ingestion-source/tenant-id entity))
+   :sourceSystem (name-or-nil (:ingestion-source/source-system entity))
+   :displayName (:ingestion-source/display-name entity)
+   :isEnabled (:ingestion-source/is-enabled entity)
+   :config {:baseUrl (get-in entity [:ingestion-source/config :base-url])
+            :apiKeySecretRef (get-in entity [:ingestion-source/config
+                                             :api-key-secret-ref])
+            :pollIntervalSeconds
+            (get-in entity [:ingestion-source/config
+                            :poll-interval-seconds])
+            :filters (get-in entity [:ingestion-source/config :filters])}
+   :cursor (:ingestion-source/cursor entity)
+   :lastSuccessfulPullAt
+   (str-or-nil (:ingestion-source/last-successful-pull-at entity))
+   :lastError (:ingestion-source/last-error entity)})
+
+(defn ingestion-run [entity]
+  {:id (str (:ingestion-run/id entity))
+   :tenantId (str (:ingestion-run/tenant-id entity))
+   :sourceSystem (name-or-nil (:ingestion-run/source-system entity))
+   :status (name-or-nil (:ingestion-run/status entity))
+   :exceptionsAttempted (:ingestion-run/exceptions-attempted entity)
+   :exceptionsStored (:ingestion-run/exceptions-stored entity)
+   :exceptionsSkipped (:ingestion-run/exceptions-skipped entity)
+   :exceptionsRejected (:ingestion-run/exceptions-rejected entity)
+   :sourceRefs (:ingestion-run/source-refs entity)
+   :startedAt (str-or-nil (:ingestion-run/started-at entity))
+   :finishedAt (str-or-nil (:ingestion-run/finished-at entity))
+   :cursor (:ingestion-run/cursor entity)
+   :error (:ingestion-run/error entity)})
