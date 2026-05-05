@@ -2,16 +2,16 @@
 
 ## Purpose
 
-Owns offline jobs that run domain maintenance, adapter polling, and event ingestion without introducing direct delivery side effects outside established client/domain helpers.
+Owns offline jobs that run domain maintenance, adapter polling, and event ingestion without introducing direct delivery side effects outside established client/domain helpers. Adapter jobs route normalized exceptions through the shared domain ingestion pipeline.
 
 ## Key files
 
 - `src/drw/jobs/sla_reaper.clj` - runs one SLA sweep and returns checked/breached counts.
-- `src/drw/jobs/adapter_poll.clj` - shared poll-job runner that calls an `ExceptionAdapter`, stores normalized exceptions through the domain layer, counts stored/skipped/rejected rows, and returns a run map.
+- `src/drw/jobs/adapter_poll.clj` - shared poll-job runner that calls an `ExceptionAdapter`, ingests normalized exceptions through `drw.domain.exceptions/ingest!`, counts stored/skipped/rejected rows, and returns a run map.
 - `src/drw/jobs/invoice_recon_poll.clj` - builds tenant/source config from invoice reconciliation env values and runs the invoice adapter with adapter actor metadata.
 - `src/drw/jobs/transaction_recon_poll.clj` - builds tenant/source config from transaction reconciliation env values and runs the transaction adapter with adapter actor metadata.
 - `src/drw/jobs/contract_lifecycle_backfill.clj` - builds tenant/source config from Contract Lifecycle env values and runs the contract adapter through the shared poll runner.
-- `src/drw/jobs/contract_lifecycle_nats_consumer.clj` - subscribes to contract breach/conflict subjects through the NATS boundary, parses events through the contract adapter, and stores/skips/rejects per tenant.
+- `src/drw/jobs/contract_lifecycle_nats_consumer.clj` - subscribes to contract breach/conflict subjects through the NATS boundary, parses events through the contract adapter, and ingests/skips/rejects per tenant.
 - `src/drw/jobs/webhook_engine_dlq_poll.clj` - builds tenant/source config from Webhook Engine env values and runs the DLQ adapter with adapter actor metadata.
 - `src/drw/domain/sla.clj` - finds overdue non-terminal disputes, claims each SLA breach idempotently, appends timeline/audit rows, and emits the Notification Hub event helper.
 - `test/drw/domain/sla_test.clj` - covers overdue detection, idempotent breach marking, terminal dispute exclusion, and Hub-disabled behavior.
@@ -27,7 +27,7 @@ Owns offline jobs that run domain maintenance, adapter polling, and event ingest
 ## Tests
 
 - Domain SLA tests verify one breach per dispute/due-at pair, audit/timeline side effects, and ignored terminal disputes.
-- Reconciliation, contract, and Webhook Engine ingestion tests verify successful runs store pending exceptions, failed upstream runs do not throw or store partial rows, disabled runs preserve cursors where applicable, duplicate source refs are skipped per tenant, tenant-mismatched contract events reject, and Tenant A/Tenant B listings stay isolated.
+- Reconciliation, contract, and Webhook Engine ingestion tests verify successful runs route through domain ingestion, failed upstream runs do not throw or store partial rows, disabled runs preserve cursors where applicable, duplicate source refs are skipped per tenant, tenant-mismatched contract events reject, and Tenant A/Tenant B listings stay isolated.
 
 ## Cross-references
 

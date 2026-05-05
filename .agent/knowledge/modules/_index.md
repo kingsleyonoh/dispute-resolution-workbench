@@ -9,8 +9,8 @@
 | `src-drw-config.md` | Runtime config loading from env data or `.env` files. |
 | `src-drw-system.md` | Datomic, Postgres, and Redis setup-time system checks. |
 | `src-drw-db.md` | Datomic schema loading, setup summaries, status transition validation, and tenant-scope helpers. |
-| `src-drw-domain.md` | In-memory domain layer for counterparties, disputes, exceptions, correlation scoring, reports, timeline, and audit rows. |
-| `src-drw-jobs.md` | Offline jobs for SLA reaping, reconciliation polling, Contract Lifecycle ingestion, and Webhook Engine DLQ polling. |
+| `src-drw-domain.md` | In-memory domain layer for counterparties, disputes, exceptions, ingestion correlation, reports, timeline, and audit rows. |
+| `src-drw-jobs.md` | Offline jobs for SLA reaping plus adapter/NATS ingestion through the domain pipeline. |
 | `src-drw-fixtures.md` | Resource-backed tenant fixture loading with identity-field validation. |
 | `src-drw-tenants.md` | Tenant identity snapshot capture for config-driven surfaces. |
 | `src-drw-templates.md` | Strict undefined-token lookup for template rendering. |
