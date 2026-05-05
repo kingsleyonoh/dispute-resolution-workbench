@@ -8,7 +8,15 @@
                                     [name {:path path :method method}]))
                              (routes/routes))]
     (is (= {:path "/api/health" :method :get} (:health routes-by-name)))
-    (is (= {:path "/" :method :get} (:home routes-by-name)))))
+    (is (= {:path "/" :method :get} (:home routes-by-name)))
+    (is (= {:path "/api/tenants/register" :method :post}
+           (:tenant-register routes-by-name)))
+    (is (= {:path "/api/tenants/me" :method :get}
+           (:tenant-profile routes-by-name)))
+    (is (= {:path "/tenants/me" :method :get}
+           (:tenant-profile-compat routes-by-name)))
+    (is (= {:path "/api/tenants/rotate-key" :method :post}
+           (:tenant-rotate-key routes-by-name)))))
 
 (deftest rejects-non-boolean-dev-route-toggle
   (testing "route construction rejects malformed setup options"

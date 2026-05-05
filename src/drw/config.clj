@@ -34,10 +34,15 @@
         "resources/datomic/sql-transactor.properties")
    :redis-url (get env "REDIS_URL")
    :session-secret (get env "SESSION_SECRET")
+   :self-registration-enabled (not= "false" (get env "SELF_REGISTRATION_ENABLED"
+                                                 "true"))
+   :api-key-prefix (get env "API_KEY_PREFIX" "drw_live_")
    :notification-hub-enabled (= "true" (get env "NOTIFICATION_HUB_ENABLED"))
    :notification-hub-url (get env "NOTIFICATION_HUB_URL")
+   :notification-hub-api-key (get env "NOTIFICATION_HUB_API_KEY")
    :workflow-engine-enabled (= "true" (get env "WORKFLOW_ENGINE_ENABLED"))
-   :workflow-engine-url (get env "WORKFLOW_ENGINE_URL")})
+   :workflow-engine-url (get env "WORKFLOW_ENGINE_URL")
+   :workflow-engine-api-key (get env "WORKFLOW_ENGINE_API_KEY")})
 
 (defn load-config
   ([] (load-config {:env (System/getenv)}))

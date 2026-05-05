@@ -14,6 +14,8 @@
 | `template-strict-fetch.md` | Template token lookup throws on missing values instead of rendering empty strings. |
 | `audit-append-only.md` | Audit transactions are tenant-scoped insert-only records. |
 | `http-server-skeleton.md` | Pedestal starts from a route table that must stay aligned with OpenAPI and E2E coverage. |
+| `ecosystem-client-stubs.md` | Optional ecosystem clients validate enabled config and remain safe no-ops when disabled. |
+| `http-api-auth-tenants.md` | Pedestal API auth, tenant binding, rate limits, audit context, and tenant-key lifecycle contracts. |
 | `ui-htmx-shell.md` | Server-rendered Hiccup pages use the shared HTMX shell and generated Tailwind asset path. |
 | `EXAMPLE.md` | Template showing the expected shape — delete once a real foundation primitive exists. |
 

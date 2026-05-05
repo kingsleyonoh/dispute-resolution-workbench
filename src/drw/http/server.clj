@@ -3,7 +3,7 @@
             [drw.http.routes :as routes]))
 
 (defn service-map [cfg]
-  {::http/routes (routes/routes)
+  {::http/routes (routes/routes cfg)
    ::http/type :jetty
    ::http/port (:port cfg)
    ::http/join? false
