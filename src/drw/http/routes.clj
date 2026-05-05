@@ -9,7 +9,8 @@
             [drw.http.interceptors.ratelimit :as ratelimit]
             [drw.http.interceptors.request-id :as request-id]
             [drw.http.interceptors.tenant :as tenant]
-            [drw.http.json :as json]))
+            [drw.http.json :as json]
+            [drw.ui.handlers :as ui]))
 
 (defn- api-chain [cfg handler]
   [(request-id/interceptor)
@@ -32,7 +33,30 @@
    (let [cfg (merge {:self-registration-enabled true
                      :api-key-prefix "drw_live_"}
                     cfg)]
-     #{["/" :get (page-chain handlers/home) :route-name :home]
+     #{["/" :get (page-chain ui/home) :route-name :home]
+       ["/login" :get (page-chain ui/login) :route-name :login]
+       ["/login" :post (page-chain (ui/login-submit cfg))
+        :route-name :login-submit]
+       ["/logout" :post (page-chain ui/logout) :route-name :logout]
+       ["/disputes" :get (page-chain ui/disputes-list)
+        :route-name :ui-disputes-list]
+       ["/disputes" :post (page-chain ui/disputes-create)
+        :route-name :ui-disputes-create]
+       ["/disputes/:id" :get (page-chain ui/dispute-detail)
+        :route-name :ui-disputes-detail]
+       ["/disputes/:id/assign" :post (page-chain ui/assign-dispute)
+        :route-name :ui-disputes-assign]
+       ["/disputes/:id/transition" :post
+        (page-chain ui/transition-dispute)
+        :route-name :ui-disputes-transition]
+       ["/disputes/:id/comments" :post (page-chain ui/comment-dispute)
+        :route-name :ui-disputes-comment]
+       ["/disputes/:id/exceptions" :post (page-chain ui/attach-exception)
+        :route-name :ui-disputes-attach-exception]
+       ["/counterparties" :get (page-chain ui/counterparties-list)
+        :route-name :ui-counterparties-list]
+       ["/counterparties/:id" :get (page-chain ui/counterparty-detail)
+        :route-name :ui-counterparties-detail]
        ["/api/health" :get (api-chain cfg handlers/health) :route-name :health]
        ["/api/tenants/register" :post
         (api-chain cfg (tenants/register-handler cfg))

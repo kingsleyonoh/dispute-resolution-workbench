@@ -10,4 +10,4 @@
 (defn home [_request]
   {:status 200
    :headers {"Content-Type" "text/html; charset=utf-8"}
-   :body (str (h/html (pages/home)))})
+   :body (str (h/html (pages/login-page nil)))})

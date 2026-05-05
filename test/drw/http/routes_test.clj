@@ -9,6 +9,15 @@
                              (routes/routes))]
     (is (= {:path "/api/health" :method :get} (:health routes-by-name)))
     (is (= {:path "/" :method :get} (:home routes-by-name)))
+    (is (= {:path "/login" :method :get} (:login routes-by-name)))
+    (is (= {:path "/login" :method :post} (:login-submit routes-by-name)))
+    (is (= {:path "/disputes" :method :get} (:ui-disputes-list routes-by-name)))
+    (is (= {:path "/disputes" :method :post}
+           (:ui-disputes-create routes-by-name)))
+    (is (= {:path "/disputes/:id" :method :get}
+           (:ui-disputes-detail routes-by-name)))
+    (is (= {:path "/counterparties" :method :get}
+           (:ui-counterparties-list routes-by-name)))
     (is (= {:path "/api/tenants/register" :method :post}
            (:tenant-register routes-by-name)))
     (is (= {:path "/api/tenants/me" :method :get}

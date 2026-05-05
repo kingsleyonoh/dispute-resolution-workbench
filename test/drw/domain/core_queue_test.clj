@@ -86,10 +86,10 @@
 (deftest dispute-lifecycle-enforces-status-gate-and-tenant-scope
   (reset-domain!)
   (let [counterparty (counterparties/create!
-                     {:tenant-id tenant-a
-                      :canonical-name "Lifecycle Vendor"
-                      :kind :vendor}
-                     actor)
+                      {:tenant-id tenant-a
+                       :canonical-name "Lifecycle Vendor"
+                       :kind :vendor}
+                      actor)
         dispute (disputes/create-dispute!
                  {:tenant-id tenant-a
                   :title "Invoice mismatch"

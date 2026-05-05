@@ -28,7 +28,7 @@
                                    (api/value query :source_system
                                               :sourceSystem))
                    :dispute-id (some-> (api/value query :dispute_id
-                                                   :disputeId)
+                                                  :disputeId)
                                        api/uuid-value)}
           exceptions (exceptions/list-by-tenant tenant-id filters)]
       (api/ok {:exceptions (mapv serializers/exception exceptions)
