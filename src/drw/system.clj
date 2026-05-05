@@ -1,5 +1,6 @@
 (ns drw.system
-  (:require [clojure.string :as str]
+  (:require [clojure.java.io :as io]
+            [clojure.string :as str]
             [datomic.client.api :as d]
             [next.jdbc :as jdbc]
             [taoensso.carmine :as car])
@@ -21,12 +22,53 @@
                       {:uri uri})))
     {:system system :db-name db-name}))
 
+(defn datomic-local-client-opts [cfg]
+  (let [uri (require-config cfg :datomic-uri "DATOMIC_URI")
+        {:keys [system]} (local-datomic-parts uri)]
+    {:server-type :datomic-local
+     :system system
+     :storage-dir (.getAbsolutePath
+                   (io/file (or (:datomic-storage-dir cfg)
+                                "storage/datomic-local")))}))
+
+(defn- load-properties [path]
+  (with-open [reader (io/reader path)]
+    (doto (java.util.Properties.)
+      (.load reader))))
+
+(defn- database-name [jdbc-url]
+  (-> jdbc-url
+      (str/replace #"^jdbc:" "")
+      URI.
+      .getPath
+      (str/replace #"^/" "")))
+
+(defn- query-param [jdbc-url key]
+  (let [query (some-> jdbc-url (str/replace #"^jdbc:" "") URI. .getQuery)]
+    (some (fn [part]
+            (let [[k v] (str/split part #"=" 2)]
+              (when (= key k) v)))
+          (str/split (or query "") #"&"))))
+
+(defn datomic-sql-storage-config [cfg]
+  (let [jdbc-url (require-config cfg :database-url "DATABASE_URL")
+        props-file (or (:datomic-sql-transactor-properties cfg)
+                       "resources/datomic/sql-transactor.properties")
+        props (load-properties props-file)
+        sql-url (.getProperty props "sql-url")]
+    {:properties-file props-file
+     :protocol (.getProperty props "protocol")
+     :transactor-host (.getProperty props "host")
+     :sql-url sql-url
+     :jdbc-url jdbc-url
+     :database-name (database-name jdbc-url)
+     :database-user (or (query-param sql-url "user")
+                        (query-param jdbc-url "user"))}))
+
 (defn check-datomic-local! [cfg]
   (let [uri (require-config cfg :datomic-uri "DATOMIC_URI")
         {:keys [system db-name]} (local-datomic-parts uri)
-        client-opts {:server-type :datomic-local
-                     :system system
-                     :storage-dir :mem}
+        client-opts (assoc (datomic-local-client-opts cfg) :system system)
         client (d/client client-opts)]
     (d/create-database client {:db-name db-name})
     (d/connect client {:db-name db-name})

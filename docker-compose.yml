@@ -1,7 +1,10 @@
 services:
   app:
-    build: .
+    build:
+      context: .
+      target: dev
     profiles: ["app"]
+    command: ["clojure", "-M:dev"]
     env_file:
       - .env.local
     depends_on:
@@ -12,6 +15,7 @@ services:
     ports:
       - "3049:3049"
     volumes:
+      - .:/app
       - datomic-local:/app/storage/datomic-local
     networks:
       - internal

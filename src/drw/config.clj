@@ -29,6 +29,9 @@
    :database-pool (parse-port (get env "DATABASE_POOL" "10"))
    :datomic-uri (get env "DATOMIC_URI")
    :datomic-storage-dir (get env "DATOMIC_STORAGE_DIR" "storage/datomic-local")
+   :datomic-sql-transactor-properties
+   (get env "DATOMIC_SQL_TRANSACTOR_PROPERTIES"
+        "resources/datomic/sql-transactor.properties")
    :redis-url (get env "REDIS_URL")
    :session-secret (get env "SESSION_SECRET")
    :notification-hub-enabled (= "true" (get env "NOTIFICATION_HUB_ENABLED"))

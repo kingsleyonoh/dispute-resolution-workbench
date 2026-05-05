@@ -16,7 +16,8 @@
                :target-dir class-dir})
   (b/compile-clj {:basis @basis
                   :src-dirs ["src"]
-                  :class-dir class-dir})
+                  :class-dir class-dir
+                  :ns-compile '[drw.core]})
   (b/uber {:class-dir class-dir
            :uber-file uber-file
            :basis @basis

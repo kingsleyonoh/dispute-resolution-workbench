@@ -3,11 +3,15 @@
  :deps {org.clojure/clojure {:mvn/version "1.12.4"}
         com.datomic/local {:mvn/version "1.0.291"}
         com.github.seancorfield/next.jdbc {:mvn/version "1.3.1093"}
+        hiccup/hiccup {:mvn/version "2.0.0-RC5"}
+        io.pedestal/pedestal.jetty {:mvn/version "0.7.2"}
+        io.pedestal/pedestal.service {:mvn/version "0.7.2"}
         org.postgresql/postgresql {:mvn/version "42.7.11"}
         com.taoensso/carmine {:mvn/version "3.5.0"}}
 
  :aliases
- {:dev {:extra-paths ["dev" "test"]}
+ {:dev {:extra-paths ["dev" "test"]
+        :main-opts ["-m" "drw.core"]}
 
   :test {:extra-paths ["test"]
          :extra-deps {lambdaisland/kaocha {:mvn/version "1.91.1392"}
