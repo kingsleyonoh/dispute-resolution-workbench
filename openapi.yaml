@@ -380,6 +380,104 @@ paths:
           description: Correlation not found
         "422":
           $ref: "#/components/responses/IllegalStatusTransition"
+  /api/ingestion-sources:
+    get:
+      summary: List tenant-scoped ingestion sources
+      operationId: listIngestionSources
+      security:
+        - ApiKeyAuth: []
+      responses:
+        "200":
+          description: Ingestion source page
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sources:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/IngestionSource"
+                  nextCursor:
+                    type:
+                      - string
+                      - "null"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      summary: Save tenant-scoped ingestion source settings
+      operationId: saveIngestionSource
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IngestionSourceSave"
+      responses:
+        "200":
+          description: Updated ingestion source
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  source:
+                    $ref: "#/components/schemas/IngestionSource"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+  /api/ingestion-sources/{id}/pull-now:
+    post:
+      summary: Run an ingestion source pull immediately
+      operationId: pullIngestionSourceNow
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "201":
+          description: Ingestion run recorded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  run:
+                    $ref: "#/components/schemas/IngestionRun"
+        "404":
+          description: Ingestion source not found
+  /api/ingestion-runs:
+    get:
+      summary: List tenant-scoped ingestion runs
+      operationId: listIngestionRuns
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: source_system
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/IngestionRunStatus"
+      responses:
+        "200":
+          description: Ingestion run page
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  runs:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/IngestionRun"
+                  nextCursor:
+                    type:
+                      - string
+                      - "null"
   /api/counterparties:
     get:
       summary: List tenant-scoped counterparties
@@ -477,6 +575,14 @@ components:
         - accepted
         - rejected
         - auto-merged
+    IngestionRunStatus:
+      type: string
+      enum:
+        - succeeded
+        - failed
+        - disabled
+        - partial
+        - running
     DisputeCreate:
       type: object
       required:
@@ -593,6 +699,102 @@ components:
           $ref: "#/components/schemas/Exception"
         targetDispute:
           $ref: "#/components/schemas/Dispute"
+    IngestionSourceSave:
+      type: object
+      required:
+        - source_system
+      properties:
+        source_system:
+          type: string
+          enum:
+            - invoice-recon
+            - transaction-recon
+            - contract-lifecycle
+            - webhook-engine
+        is_enabled:
+          type: boolean
+        base_url:
+          type: string
+        poll_interval_seconds:
+          type: integer
+          minimum: 1
+    IngestionSource:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        sourceSystem:
+          type: string
+        displayName:
+          type: string
+        isEnabled:
+          type: boolean
+        config:
+          type: object
+          properties:
+            baseUrl:
+              type:
+                - string
+                - "null"
+            apiKeySecretRef:
+              type: string
+            pollIntervalSeconds:
+              type: integer
+            filters:
+              type: object
+        cursor:
+          type:
+            - string
+            - "null"
+        lastSuccessfulPullAt:
+          type:
+            - string
+            - "null"
+        lastError:
+          type:
+            - object
+            - "null"
+    IngestionRun:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        sourceSystem:
+          type: string
+        status:
+          $ref: "#/components/schemas/IngestionRunStatus"
+        exceptionsAttempted:
+          type: integer
+        exceptionsStored:
+          type: integer
+        exceptionsSkipped:
+          type: integer
+        exceptionsRejected:
+          type: integer
+        sourceRefs:
+          type: array
+          items:
+            type: string
+        startedAt:
+          type: string
+        finishedAt:
+          type: string
+        cursor:
+          type:
+            - string
+            - "null"
+        error:
+          type:
+            - object
+            - "null"
     Counterparty:
       type: object
       properties:
