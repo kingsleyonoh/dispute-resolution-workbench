@@ -12,7 +12,7 @@ CFOs, Heads of Finance Operations, supervisors, and operations analysts at B2B S
 - External adapters are optional; manual disputes are the baseline product.
 
 ## API Surface
-Primary routes include tenant registration/profile/key rotation, dispute CRUD and transitions, exception ingestion, correlations, counterparties, playbooks, SLA policies, ingestion sources/runs, audit log, health checks, and HTMX UI routes.
+Current wired routes are `GET /api/health` for JSON liveness and `GET /` for the server-rendered HTMX shell. The broader tenant, dispute, exception, correlation, SLA, audit, and integration APIs are planned by the PRD but not wired yet.
 
 ## Integrations
 Consumes from Invoice Reconciliation, Contract Lifecycle, Transaction Reconciliation, and optional Webhook Ingestion Engine. Emits to Notification Hub and triggers Workflow Automation Engine.
@@ -22,6 +22,8 @@ Consumes from Invoice Reconciliation, Contract Lifecycle, Transaction Reconcilia
 - Start infra: `docker compose up -d postgres redis`
 - Run app: `clojure -M:dev`
 - Test: `clojure -M:test`
+- E2E: `clojure -M:test:e2e`
+- CSS: `npm run build:css`
 
 ## Repository
 Private repo expected under `https://github.com/kingsleyonoh/dispute-resolution-workbench`.

@@ -6,6 +6,11 @@
 
 | File | Summary |
 |------|---------|
+| `src-drw-config.md` | Runtime config loading from env data or `.env` files. |
+| `src-drw-system.md` | Datomic, Postgres, and Redis setup-time system checks. |
+| `src-drw-http.md` | Pedestal service map, route table, and initial handlers. |
+| `src-drw-ui.md` | Hiccup/HTMX/Tailwind UI shell and root page. |
+| `src-drw-core-setup.md` | App startup, setup smoke command, Docker, and build entry points. |
 | `EXAMPLE.md` | Template showing the expected shape — delete once a real module exists. |
 
 ## How to add a new module

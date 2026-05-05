@@ -6,6 +6,10 @@
 
 | File | Summary |
 |------|---------|
+| `core-config-loading.md` | Runtime config is loaded and normalized at the boundary before startup consumers use it. |
+| `runtime-system-checks.md` | Setup checks validate Datomic, SQL storage, Postgres, and Redis assumptions from normalized config. |
+| `http-server-skeleton.md` | Pedestal starts from a route table that must stay aligned with OpenAPI and E2E coverage. |
+| `ui-htmx-shell.md` | Server-rendered Hiccup pages use the shared HTMX shell and generated Tailwind asset path. |
 | `EXAMPLE.md` | Template showing the expected shape — delete once a real foundation primitive exists. |
 
 ## What belongs here
