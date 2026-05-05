@@ -17,8 +17,8 @@
 | `src-drw-audit.md` | Tenant-scoped append-only audit transaction construction. |
 | `src-drw-api.md` | JSON tenant lifecycle handlers for registration, profile, and key rotation. |
 | `src-drw-ecosystem.md` | Disabled-by-default Notification Hub and Workflow Engine client stubs. |
-| `src-drw-http.md` | Pedestal service map, route table, JSON helpers, and API interceptors. |
-| `src-drw-ui.md` | Hiccup/HTMX/Tailwind UI shell and root page. |
+| `src-drw-http.md` | Pedestal service map, route table, JSON helpers, API interceptors, and UI route wiring. |
+| `src-drw-ui.md` | Hiccup/HTMX/Tailwind login, dashboard, dispute, exception, and counterparty UI. |
 | `src-drw-core-setup.md` | App startup, setup smoke command, Docker, and build entry points. |
 | `EXAMPLE.md` | Template showing the expected shape — delete once a real module exists. |
 

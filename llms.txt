@@ -7,13 +7,13 @@ CFOs, Heads of Finance Operations, supervisors, and operations analysts at B2B S
 
 ## Architecture
 - Clojure 1.12, Pedestal 0.7, Datomic Local smoke checks, Datomic Pro/PostgreSQL 16 storage config, Redis 7.
-- Server-rendered Hiccup + HTMX UI with Tailwind CSS.
-- API-key authentication resolves protected requests to a mandatory current tenant; session auth is planned for the UI surface.
+- Server-rendered Hiccup + HTMX UI with Tailwind CSS for login, dashboard, dispute operations, manual exception attach, and counterparty review.
+- API-key authentication resolves protected API requests to a mandatory current tenant; UI requests resolve tenants from `drw_session`, `X-DRW-Session`, or `X-API-Key`.
 - External adapters are optional; manual disputes are the baseline product.
 - Current data contract includes `resources/datomic/schema.edn`, `resources/fixtures/tenants.edn`, tenant-scope helpers, tenant snapshots, strict template lookup, append-only audit transaction construction, in-memory tenant API-key store, disabled-by-default ecosystem client stubs, process-local domain stores for counterparties, disputes, manual exceptions, timeline, audit rows, and idempotent SLA breach claims.
 
 ## API Surface
-Current wired routes are `GET /api/health` for JSON liveness, `GET /` for the server-rendered HTMX shell, tenant lifecycle endpoints, dispute queue endpoints, manual exception endpoints, and counterparty list/get/merge endpoints. Correlation, resolution playbook, audit report, and external ingestion APIs remain planned by the PRD but are not wired yet.
+Current wired JSON routes are `GET /api/health`, tenant lifecycle endpoints, dispute queue endpoints, manual exception endpoints, and counterparty list/get/merge endpoints. Server-rendered UI routes cover `/`, `/login`, `/disputes`, dispute detail/actions, `/counterparties`, and counterparty detail. Correlation, resolution playbook, audit report, and external ingestion APIs remain planned by the PRD but are not wired yet.
 
 ## Integrations
 Consumes from Invoice Reconciliation, Contract Lifecycle, Transaction Reconciliation, and optional Webhook Ingestion Engine. Emits to Notification Hub and triggers Workflow Automation Engine.
