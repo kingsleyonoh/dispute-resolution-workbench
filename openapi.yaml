@@ -296,6 +296,90 @@ paths:
           $ref: "#/components/responses/ValidationError"
         "409":
           description: Duplicate source reference
+  /api/correlations:
+    get:
+      summary: List tenant-scoped correlation candidates
+      operationId: listCorrelations
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/CorrelationStatus"
+      responses:
+        "200":
+          description: Correlation candidate page
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  correlations:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/CorrelationDetail"
+                  nextCursor:
+                    type:
+                      - string
+                      - "null"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /api/correlations/{id}:
+    get:
+      summary: Read a correlation candidate
+      operationId: getCorrelation
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Correlation detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CorrelationDetail"
+        "404":
+          description: Correlation not found
+  /api/correlations/{id}/accept:
+    post:
+      summary: Accept a pending correlation and attach its exception
+      operationId: acceptCorrelation
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Correlation accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CorrelationDetail"
+        "404":
+          description: Correlation not found
+        "422":
+          $ref: "#/components/responses/IllegalStatusTransition"
+  /api/correlations/{id}/reject:
+    post:
+      summary: Reject a pending correlation without attaching its exception
+      operationId: rejectCorrelation
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Correlation rejected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CorrelationDetail"
+        "404":
+          description: Correlation not found
+        "422":
+          $ref: "#/components/responses/IllegalStatusTransition"
   /api/counterparties:
     get:
       summary: List tenant-scoped counterparties
@@ -386,6 +470,13 @@ components:
         - resolving
         - resolved
         - withdrawn
+    CorrelationStatus:
+      type: string
+      enum:
+        - pending
+        - accepted
+        - rejected
+        - auto-merged
     DisputeCreate:
       type: object
       required:
@@ -464,6 +555,44 @@ components:
           type:
             - string
             - "null"
+    Correlation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        newExceptionId:
+          type: string
+          format: uuid
+        targetDisputeId:
+          type: string
+          format: uuid
+        score:
+          type: number
+          format: double
+        rationale:
+          type: string
+        status:
+          $ref: "#/components/schemas/CorrelationStatus"
+        decidedByUserId:
+          type:
+            - string
+            - "null"
+        decidedAt:
+          type:
+            - string
+            - "null"
+        createdAt:
+          type: string
+    CorrelationDetail:
+      type: object
+      properties:
+        correlation:
+          $ref: "#/components/schemas/Correlation"
+        exception:
+          $ref: "#/components/schemas/Exception"
+        targetDispute:
+          $ref: "#/components/schemas/Dispute"
     Counterparty:
       type: object
       properties:

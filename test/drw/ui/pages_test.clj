@@ -73,3 +73,24 @@
     (is (str/includes? counterparties-html "Counterparties"))
     (is (str/includes? counterparties-html "UI Vendor"))
     (is (str/includes? counterparty-html "Counterparty history"))))
+
+(deftest renders-correlation-queue-with-decision-actions
+  (let [{:keys [counterparty]} (seed-dispute!)
+        result (exceptions/ingest!
+                {:tenant-id tenant-id
+                 :source-system :invoice-recon
+                 :source-ref "UI-CORR-1"
+                 :kind :invoice-discrepancy
+                 :currency "EUR"
+                 :counterparty-id (:counterparty/id counterparty)
+                 :observed-at #inst "2026-05-05T10:30:00.000-00:00"
+                 :monetary-impact-cents 0}
+                actor)
+        queue-html (html (pages/correlations-page tenant-id))]
+    (is (= :correlation-pending (:status result)))
+    (is (str/includes? queue-html "Correlation queue"))
+    (is (str/includes? queue-html "UI-CORR-1"))
+    (is (str/includes? queue-html "UI invoice mismatch"))
+    (is (str/includes? queue-html "/correlations/"))
+    (is (str/includes? queue-html "/accept"))
+    (is (str/includes? queue-html "/reject"))))

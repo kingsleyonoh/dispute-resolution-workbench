@@ -2,6 +2,7 @@
   (:require [drw.domain.counterparties :as counterparties]
             [drw.domain.disputes :as disputes]
             [drw.domain.exceptions :as exceptions]
+            [drw.ui.correlations :as correlation-page]
             [drw.ui.layout :as layout]))
 
 (def statuses
@@ -17,6 +18,8 @@
    [:a {:href "/disputes" :class "font-medium text-slate-700"} "Disputes"]
    [:a {:href "/counterparties" :class "font-medium text-slate-700"}
     "Counterparties"]
+   [:a {:href "/correlations" :class "font-medium text-slate-700"}
+    "Correlations"]
    [:form {:method "post" :action "/logout"}
     [:button {:class "text-slate-500"} "Sign out"]]])
 
@@ -240,3 +243,7 @@
             (if cp
               (dispute-table related)
               [:p "Counterparty not found"])])))
+
+(defn correlations-page [tenant-id]
+  (shell "Correlation queue"
+         (correlation-page/queue-section tenant-id)))

@@ -59,3 +59,23 @@
    :countryCode (:counterparty/country-code entity)
    :externalRefs (:counterparty/external-refs entity)
    :createdAt (str-or-nil (:counterparty/created-at entity))})
+
+(defn correlation [entity]
+  {:id (str (:correlation/id entity))
+   :tenantId (str (:correlation/tenant-id entity))
+   :newExceptionId (str (:correlation/new-exception-id entity))
+   :targetDisputeId (str (:correlation/target-dispute-id entity))
+   :score (:correlation/score entity)
+   :rationale (:correlation/rationale entity)
+   :status (name-or-nil (:correlation/status entity))
+   :decidedByUserId (str-or-nil (:correlation/decided-by-user-id entity))
+   :decidedAt (str-or-nil (:correlation/decided-at entity))
+   :createdAt (str-or-nil (:correlation/created-at entity))})
+
+(defn correlation-detail [hydrated]
+  (let [candidate (:correlation hydrated)
+        exception-entity (:exception hydrated)
+        dispute-entity (:target-dispute hydrated)]
+    (cond-> {:correlation (correlation candidate)}
+      exception-entity (assoc :exception (exception exception-entity))
+      dispute-entity (assoc :targetDispute (dispute dispute-entity)))))

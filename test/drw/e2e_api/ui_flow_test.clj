@@ -2,6 +2,8 @@
   (:require [clojure.string :as str]
             [clojure.test :refer [deftest is]]
             [drw.domain.counterparties :as counterparties]
+            [drw.domain.disputes :as disputes]
+            [drw.domain.exceptions :as exceptions]
             [drw.domain.state :as domain-state]
             [drw.http.interceptors.ratelimit :as ratelimit]
             [drw.http.server :as server]
@@ -147,5 +149,58 @@
           (is (str/includes? (:body detail) "UI-E2E-MAN-1"))
           (is (str/includes? (:body counterparties-page) "Browser Flow Vendor"))
           (is (str/includes? (:body counterparty-detail) "Counterparty history"))))
+      (finally
+        (server/stop! srv)))))
+
+(deftest operator-reviews-correlation-queue-through-ui-over-http
+  (let [port 31555
+        base (str "http://127.0.0.1:" port)
+        srv (start-test-server port)]
+    (try
+      (let [registered (request "POST" (str base "/api/tenants/register")
+                                "{\"name\":\"Correlation UI\"}"
+                                {"Content-Type" "application/json"})
+            api-key (json-string (:body registered) "apiKey")
+            tenant-id (java.util.UUID/fromString
+                       (json-string (:body registered) "id"))
+            cp (counterparties/create!
+                {:tenant-id tenant-id
+                 :canonical-name "UI Correlation Vendor"
+                 :kind :vendor}
+                {:actor-kind :user :actor-id "e2e-ui"})
+            dispute (disputes/create-dispute!
+                     {:tenant-id tenant-id
+                      :title "UI existing dispute"
+                      :description "Existing exception."
+                      :category :billing
+                      :severity :medium
+                      :currency "EUR"
+                      :counterparty-id (:counterparty/id cp)
+                      :created-by :user
+                      :created-at #inst "2026-05-05T09:00:00.000-00:00"}
+                     {:actor-kind :user :actor-id "e2e-ui"})
+            result (exceptions/ingest!
+                    {:tenant-id tenant-id
+                     :source-system :invoice-recon
+                     :source-ref "UI-HTTP-CORR-1"
+                     :kind :invoice-discrepancy
+                     :currency "EUR"
+                     :counterparty-id (:counterparty/id cp)
+                     :observed-at #inst "2026-05-05T10:00:00.000-00:00"
+                     :monetary-impact-cents 0}
+                    {:actor-kind :adapter :actor-id "invoice-recon"})
+            correlation-id (str (get-in result [:correlations 0 :correlation/id]))
+            session-header {"X-API-Key" api-key}
+            queue-page (request "GET" (str base "/correlations")
+                                nil session-header)
+            accepted (form (str base "/correlations/" correlation-id "/accept")
+                           {} api-key)
+            detail (request "GET" (str base "/disputes/" (:dispute/id dispute))
+                            nil session-header)]
+        (is (str/includes? (:body queue-page) "Correlation queue"))
+        (is (str/includes? (:body queue-page) "UI-HTTP-CORR-1"))
+        (is (= 303 (:status accepted)))
+        (is (str/includes? (:body detail) "UI-HTTP-CORR-1"))
+        (is (str/includes? (:body detail) "correlation accepted")))
       (finally
         (server/stop! srv)))))

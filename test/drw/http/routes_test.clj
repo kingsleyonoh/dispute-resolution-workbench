@@ -18,6 +18,8 @@
            (:ui-disputes-detail routes-by-name)))
     (is (= {:path "/counterparties" :method :get}
            (:ui-counterparties-list routes-by-name)))
+    (is (= {:path "/correlations" :method :get}
+           (:ui-correlations-list routes-by-name)))
     (is (= {:path "/api/tenants/register" :method :post}
            (:tenant-register routes-by-name)))
     (is (= {:path "/api/tenants/me" :method :get}
@@ -34,6 +36,10 @@
            (:disputes-get routes-by-name)))
     (is (= {:path "/api/exceptions" :method :post}
            (:exceptions-create routes-by-name)))
+    (is (= {:path "/api/correlations" :method :get}
+           (:correlations-list routes-by-name)))
+    (is (= {:path "/api/correlations/:id/accept" :method :post}
+           (:correlations-accept routes-by-name)))
     (is (= {:path "/api/counterparties" :method :get}
            (:counterparties-list routes-by-name)))))
 

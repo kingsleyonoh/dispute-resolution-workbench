@@ -2,6 +2,8 @@
   (:require [clojure.string :as str]
             [clojure.test :refer [deftest is]]
             [drw.domain.counterparties :as counterparties]
+            [drw.domain.disputes :as disputes]
+            [drw.domain.exceptions :as exceptions]
             [drw.domain.state :as domain-state]
             [drw.http.interceptors.ratelimit :as ratelimit]
             [drw.http.server :as server]
@@ -30,6 +32,36 @@
 (defn- json-string [body key]
   (second (re-find (re-pattern (str "\"" key "\"\\s*:\\s*\"([^\"]+)\""))
                    body)))
+
+(defn- seed-correlation! [tenant-id]
+  (let [cp (counterparties/create!
+            {:tenant-id tenant-id
+             :canonical-name "HTTP Correlation Vendor"
+             :kind :vendor}
+            {:actor-kind :user :actor-id "e2e"})
+        dispute (disputes/create-dispute!
+                 {:tenant-id tenant-id
+                  :title "HTTP existing dispute"
+                  :description "Existing open item."
+                  :category :billing
+                  :severity :medium
+                  :currency "EUR"
+                  :counterparty-id (:counterparty/id cp)
+                  :created-by :user
+                  :created-at #inst "2026-05-05T09:00:00.000-00:00"}
+                 {:actor-kind :user :actor-id "e2e"})
+        result (exceptions/ingest!
+                {:tenant-id tenant-id
+                 :source-system :invoice-recon
+                 :source-ref "HTTP-CORR-1"
+                 :kind :invoice-discrepancy
+                 :currency "EUR"
+                 :counterparty-id (:counterparty/id cp)
+                 :observed-at #inst "2026-05-05T10:00:00.000-00:00"
+                 :monetary-impact-cents 0}
+                {:actor-kind :adapter :actor-id "invoice-recon"})]
+    {:dispute dispute
+     :correlation (first (:correlations result))}))
 
 (defn- start-test-server [port]
   (store/reset-store!)
@@ -108,5 +140,46 @@
         (is (= 200 (.statusCode list-counterparties)))
         (is (str/includes? (.body list-counterparties) "HTTP Vendor"))
         (is (= 200 (.statusCode get-counterparty))))
+      (finally
+        (server/stop! srv)))))
+
+(deftest correlations-work-over-real-http-and-enforce-tenant-scope
+  (let [port 31554
+        base (str "http://127.0.0.1:" port)
+        srv (start-test-server port)]
+    (try
+      (let [tenant-a (request "POST" (str base "/api/tenants/register")
+                              "{\"name\":\"Correlation A\"}"
+                              {"Content-Type" "application/json"})
+            tenant-b (request "POST" (str base "/api/tenants/register")
+                              "{\"name\":\"Correlation B\"}"
+                              {"Content-Type" "application/json"})
+            key-a (json-string (.body tenant-a) "apiKey")
+            key-b (json-string (.body tenant-b) "apiKey")
+            tenant-id-a (java.util.UUID/fromString
+                         (json-string (.body tenant-a) "id"))
+            seed (seed-correlation! tenant-id-a)
+            correlation-id (str (get-in seed [:correlation :correlation/id]))
+            listed (request "GET" (str base "/api/correlations?status=pending")
+                            nil {"X-API-Key" key-a})
+            detail (request "GET" (str base "/api/correlations/" correlation-id)
+                            nil {"X-API-Key" key-a})
+            cross (request "GET" (str base "/api/correlations/" correlation-id)
+                           nil {"X-API-Key" key-b})
+            accepted (request "POST"
+                              (str base "/api/correlations/"
+                                   correlation-id "/accept")
+                              nil {"X-API-Key" key-a})
+            accepted-again (request "POST"
+                                    (str base "/api/correlations/"
+                                         correlation-id "/accept")
+                                    nil {"X-API-Key" key-a})]
+        (is (= 200 (.statusCode listed)))
+        (is (str/includes? (.body listed) "HTTP-CORR-1"))
+        (is (= 200 (.statusCode detail)))
+        (is (= 404 (.statusCode cross)))
+        (is (= 200 (.statusCode accepted)))
+        (is (str/includes? (.body accepted) "\"status\":\"accepted\""))
+        (is (= 422 (.statusCode accepted-again))))
       (finally
         (server/stop! srv)))))

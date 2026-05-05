@@ -1,6 +1,7 @@
 (ns drw.ui.handlers
   (:require [clojure.string :as str]
             [hiccup2.core :as h]
+            [drw.domain.correlations :as correlations]
             [drw.domain.disputes :as disputes]
             [drw.domain.exceptions :as exceptions]
             [drw.tenants.store :as store]
@@ -176,3 +177,22 @@
    (fn [tenant]
      (html (pages/counterparty-detail-page (:tenant/id tenant)
                                            (path-id request))))))
+
+(defn correlations-list [request]
+  (require-tenant
+   request
+   (fn [tenant] (html (pages/correlations-page (:tenant/id tenant))))))
+
+(defn accept-correlation [request]
+  (require-tenant
+   request
+   (fn [tenant]
+     (correlations/accept! (:tenant/id tenant) (path-id request) (actor tenant))
+     (redirect "/correlations"))))
+
+(defn reject-correlation [request]
+  (require-tenant
+   request
+   (fn [tenant]
+     (correlations/reject! (:tenant/id tenant) (path-id request) (actor tenant))
+     (redirect "/correlations"))))

@@ -2,6 +2,7 @@
   (:require [clojure.string :as str]
             [clojure.test :refer [deftest is]]
             [drw.api.counterparties :as api-counterparties]
+            [drw.api.correlations :as api-correlations]
             [drw.api.disputes :as api-disputes]
             [drw.api.exceptions :as api-exceptions]
             [drw.domain.counterparties :as counterparties]
@@ -28,6 +29,37 @@
 
 (defn- body-includes? [response value]
   (str/includes? (str (:body response)) value))
+
+(defn- seed-correlation! [tenant-id]
+  (let [cp (counterparties/create!
+            {:tenant-id tenant-id :canonical-name "Correlation Vendor"
+             :kind :vendor}
+            {:actor-kind :user :actor-id "seed"})
+        dispute (disputes/create-dispute!
+                 {:tenant-id tenant-id
+                  :title "Existing billing dispute"
+                  :description "Invoice already under review."
+                  :category :billing
+                  :severity :medium
+                  :currency "EUR"
+                  :counterparty-id (:counterparty/id cp)
+                  :created-by :user
+                  :created-at #inst "2026-05-05T09:00:00.000-00:00"}
+                 {:actor-kind :user :actor-id "seed"})
+        result (exceptions/ingest!
+                {:tenant-id tenant-id
+                 :source-system :invoice-recon
+                 :source-ref "INV-CORR-1"
+                 :kind :invoice-discrepancy
+                 :currency "EUR"
+                 :counterparty-id (:counterparty/id cp)
+                 :observed-at #inst "2026-05-05T10:00:00.000-00:00"
+                 :monetary-impact-cents 0}
+                {:actor-kind :adapter :actor-id "invoice-recon"})]
+    {:counterparty cp
+     :dispute dispute
+     :exception (:exception result)
+     :correlation (first (:correlations result))}))
 
 (deftest dispute-api-creates-lists-reads-and-rejects-cross-tenant-access
   (reset-domain!)
@@ -152,3 +184,42 @@
            (:dispute/counterparty-id
             (disputes/get-by-id tenant-a (:dispute/id dispute)))))
     (is (nil? (counterparties/get-by-id tenant-a (:counterparty/id source))))))
+
+(deftest correlation-api-lists-details-accepts-and-rejects-tenant-safely
+  (reset-domain!)
+  (let [{:keys [correlation exception dispute]} (seed-correlation! tenant-a)
+        other (seed-correlation! tenant-b)
+        id (str (:correlation/id correlation))
+        other-id (str (get-in other [:correlation :correlation/id]))
+        list-a ((api-correlations/list-handler {})
+                (req tenant-a nil nil {:status "pending"}))
+        detail-a ((api-correlations/get-handler {})
+                  (req tenant-a nil {:id id} nil))
+        cross-detail ((api-correlations/get-handler {})
+                      (req tenant-a nil {:id other-id} nil))
+        accepted ((api-correlations/accept-handler {})
+                  (req tenant-a nil {:id id} nil))
+        accepted-again ((api-correlations/accept-handler {})
+                        (req tenant-a nil {:id id} nil))
+        accepted-exception (exceptions/get-by-id tenant-a (:exception/id exception))
+        timeline (disputes/list-timeline tenant-a (:dispute/id dispute))]
+    (is (= 200 (:status list-a)))
+    (is (body-includes? list-a "\"status\":\"pending\""))
+    (is (= 200 (:status detail-a)))
+    (is (= 404 (:status cross-detail)))
+    (is (= 200 (:status accepted)))
+    (is (body-includes? accepted "\"status\":\"accepted\""))
+    (is (= (:dispute/id dispute) (:exception/dispute-id accepted-exception)))
+    (is (some #(= :correlation-accepted (:timeline/kind %)) timeline))
+    (is (= 422 (:status accepted-again)))))
+
+(deftest correlation-api-rejects-without-attaching-exception
+  (reset-domain!)
+  (let [{:keys [correlation exception]} (seed-correlation! tenant-a)
+        id (str (:correlation/id correlation))
+        rejected ((api-correlations/reject-handler {})
+                  (req tenant-a nil {:id id} nil))
+        rejected-exception (exceptions/get-by-id tenant-a (:exception/id exception))]
+    (is (= 200 (:status rejected)))
+    (is (body-includes? rejected "\"status\":\"rejected\""))
+    (is (nil? (:exception/dispute-id rejected-exception)))))

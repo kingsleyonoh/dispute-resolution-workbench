@@ -1,5 +1,6 @@
 (ns drw.http.routes
   (:require [drw.api.counterparties :as counterparties]
+            [drw.api.correlations :as correlations]
             [drw.api.disputes :as disputes]
             [drw.api.exceptions :as exceptions]
             [drw.api.tenants :as tenants]
@@ -57,6 +58,14 @@
         :route-name :ui-counterparties-list]
        ["/counterparties/:id" :get (page-chain ui/counterparty-detail)
         :route-name :ui-counterparties-detail]
+       ["/correlations" :get (page-chain ui/correlations-list)
+        :route-name :ui-correlations-list]
+       ["/correlations/:id/accept" :post
+        (page-chain ui/accept-correlation)
+        :route-name :ui-correlations-accept]
+       ["/correlations/:id/reject" :post
+        (page-chain ui/reject-correlation)
+        :route-name :ui-correlations-reject]
        ["/api/health" :get (api-chain cfg handlers/health) :route-name :health]
        ["/api/tenants/register" :post
         (api-chain cfg (tenants/register-handler cfg))
@@ -97,6 +106,18 @@
        ["/api/exceptions" :post
         (api-chain cfg (exceptions/create-handler cfg))
         :route-name :exceptions-create]
+       ["/api/correlations" :get
+        (api-chain cfg (correlations/list-handler cfg))
+        :route-name :correlations-list]
+       ["/api/correlations/:id" :get
+        (api-chain cfg (correlations/get-handler cfg))
+        :route-name :correlations-get]
+       ["/api/correlations/:id/accept" :post
+        (api-chain cfg (correlations/accept-handler cfg))
+        :route-name :correlations-accept]
+       ["/api/correlations/:id/reject" :post
+        (api-chain cfg (correlations/reject-handler cfg))
+        :route-name :correlations-reject]
        ["/api/counterparties" :get
         (api-chain cfg (counterparties/list-handler cfg))
         :route-name :counterparties-list]

@@ -81,6 +81,7 @@
       :validation-error (validation-error (or field :request) message)
       :dispute/not-found (not-found "Dispute not found")
       :exception/not-found (not-found "Exception not found")
+      :correlation/not-found (not-found "Correlation not found")
       :counterparty/not-found (not-found "Counterparty not found")
       :exception/duplicate-source-ref (conflict message)
       :counterparty/duplicate-normalized-name (conflict message)
