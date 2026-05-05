@@ -15,6 +15,7 @@
 | `src-drw-tenants.md` | Tenant identity snapshot capture for config-driven surfaces. |
 | `src-drw-templates.md` | Strict undefined-token lookup for template rendering. |
 | `src-drw-audit.md` | Tenant-scoped append-only audit transaction construction. |
+| `src-drw-adapters.md` | Shared exception ingestion adapter protocol and disabled-safe fetcher foundation. |
 | `src-drw-api.md` | JSON tenant lifecycle handlers for registration, profile, and key rotation. |
 | `src-drw-ecosystem.md` | Disabled-by-default Notification Hub and Workflow Engine client stubs. |
 | `src-drw-http.md` | Pedestal service map, route table, JSON helpers, API interceptors, and UI route wiring. |

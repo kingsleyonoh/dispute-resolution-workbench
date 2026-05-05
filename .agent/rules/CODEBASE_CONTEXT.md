@@ -56,6 +56,7 @@ Tenant-scoped dispute operations system for finance teams, covering manual excep
 | `src/drw/tenants/` | Tenant identity snapshot capture for config-driven surfaces |
 | `src/drw/templates/` | Strict template token lookup helpers |
 | `src/drw/audit/` | Append-only audit transaction construction |
+| `src/drw/adapters/` | Shared exception ingestion adapter protocol and disabled-safe fetcher foundation |
 | `src/drw/api/` | JSON API handlers for tenant lifecycle plus dispute, exception, and counterparty queue operations |
 | `src/drw/ecosystem/` | Disabled-by-default Notification Hub and Workflow Engine client stubs |
 | `src/drw/http/` | Pedestal server, JSON helpers, route table, API interceptor chain, and page route wiring |
@@ -98,7 +99,7 @@ See `.env.example`. Runtime-required keys enforced by `drw.config`: `APP_ENV`, `
 API requests use `X-API-Key` prefix lookup and constant-time hash comparison. Public routes are explicit in `drw.http.interceptors.auth/public-routes`. Protected API routes require `:current-tenant`, rate limits are applied per route, request ids are propagated through `X-Request-Id`, and tenant lifecycle mutations append audit rows. UI requests resolve the same tenant context from an in-memory `drw_session` cookie, `X-DRW-Session`, or `X-API-Key` fallback before calling domain helpers. Cross-tenant misses return 404.
 
 ## Data Contracts
-Tenant fixture data lives in `resources/fixtures/tenants.edn` and must keep at least two tenants with distinct identity literals. Tenant snapshots use `drw.db.scope/entity-by-tenant-id` and fail closed on missing identity fields. Template lookup uses strict undefined behavior through `drw.templates.strict-fetch`. Audit rows are append-only insert maps built by `drw.audit.recorder`. Current domain functions use process-local atoms for counterparties, disputes, manual exceptions, timeline entries, audit rows, and SLA breach claims until durable Datomic mutation wiring is introduced. UI handlers call these domain helpers with the resolved tenant id and actor slug instead of maintaining a parallel UI store. `drw.domain.reports` renders tenant-scoped dispute audit PDF-source HTML and fails closed on cross-tenant dispute ids; full PDF generation remains planned. The SLA reaper scans overdue non-terminal disputes, appends `:sla-breached` timeline/audit rows once per `[dispute-id due-at]`, and emits `dispute.sla_breached` through the Notification Hub client helper.
+Tenant fixture data lives in `resources/fixtures/tenants.edn` and must keep at least two tenants with distinct identity literals. Tenant snapshots use `drw.db.scope/entity-by-tenant-id` and fail closed on missing identity fields. Template lookup uses strict undefined behavior through `drw.templates.strict-fetch`. Audit rows are append-only insert maps built by `drw.audit.recorder`. Current domain functions use process-local atoms for counterparties, disputes, manual exceptions, timeline entries, audit rows, and SLA breach claims until durable Datomic mutation wiring is introduced. UI handlers call these domain helpers with the resolved tenant id and actor slug instead of maintaining a parallel UI store. `drw.domain.reports` renders tenant-scoped dispute audit PDF-source HTML and fails closed on cross-tenant dispute ids; full PDF generation remains planned. The SLA reaper scans overdue non-terminal disputes, appends `:sla-breached` timeline/audit rows once per `[dispute-id due-at]`, and emits `dispute.sla_breached` through the Notification Hub client helper. `drw.adapters.protocol` defines the normalized exception adapter boundary; `drw.adapters.fetcher` provides disabled-safe injected-transport fetches with tenant/source metadata, retries, timeout classification, and per-tenant/source circuit isolation.
 
 ## Deep References
 | Area | Planned path |
@@ -113,6 +114,7 @@ Tenant fixture data lives in `resources/fixtures/tenants.edn` and must keep at l
 | Tenant snapshots | `.agent/knowledge/modules/src-drw-tenants.md` |
 | Strict template lookup | `.agent/knowledge/modules/src-drw-templates.md` |
 | Audit recorder | `.agent/knowledge/modules/src-drw-audit.md` |
+| Adapter foundation | `.agent/knowledge/modules/src-drw-adapters.md` |
 | Tenant API handlers | `.agent/knowledge/modules/src-drw-api.md` |
 | Ecosystem client stubs | `.agent/knowledge/modules/src-drw-ecosystem.md` |
 | HTTP server and routes | `.agent/knowledge/modules/src-drw-http.md` |
