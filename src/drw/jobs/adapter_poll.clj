@@ -5,15 +5,15 @@
 (defn- duplicate? [ex]
   (= :exception/duplicate-source-ref (:type (ex-data ex))))
 
-(defn- store-one! [normalized actor]
+(defn- store-one! [normalized actor ingestion-opts]
   (try
-    (exceptions/create-manual! normalized actor)
+    (exceptions/ingest! normalized actor ingestion-opts)
     :stored
     (catch clojure.lang.ExceptionInfo ex
       (if (duplicate? ex) :skipped :rejected))))
 
-(defn- store-exceptions! [items actor]
-  (frequencies (map #(store-one! % actor) items)))
+(defn- store-exceptions! [items actor ingestion-opts]
+  (frequencies (map #(store-one! % actor ingestion-opts) items)))
 
 (defn- run-status [poll-result]
   (if (:disabled? poll-result) :disabled :succeeded))
@@ -45,5 +45,6 @@
                     (:exceptions poll-result)
                     (:actor opts {:actor-kind :adapter
                                   :actor-id (name (:source-system
-                                                   poll-result))}))]
+                                                   poll-result))})
+                    (:ingestion opts {}))]
         (base-run poll-result (run-status poll-result) counts)))))

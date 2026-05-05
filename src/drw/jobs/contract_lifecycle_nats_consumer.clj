@@ -10,9 +10,9 @@
 (defn- duplicate? [ex]
   (= :exception/duplicate-source-ref (:type (ex-data ex))))
 
-(defn- store-one! [normalized actor]
+(defn- store-one! [normalized actor ingestion-opts]
   (try
-    (exceptions/create-manual! normalized actor)
+    (exceptions/ingest! normalized actor ingestion-opts)
     :stored
     (catch clojure.lang.ExceptionInfo ex
       (if (duplicate? ex) :skipped :rejected))))
@@ -29,7 +29,7 @@
                        tenant-config
                        (:payload message)
                        {:subject (:subject message)})
-           status (store-one! normalized actor)]
+           status (store-one! normalized actor (:ingestion tenant-config {}))]
        {:status status :source-ref (:source-ref normalized)})
      (catch clojure.lang.ExceptionInfo ex
        {:status :rejected
