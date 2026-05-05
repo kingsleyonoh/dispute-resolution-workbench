@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Owns the in-memory domain data abstraction for the core manual queue: counterparties, disputes, exceptions, adapter ingestion, ingestion source settings/runs, correlation scoring/candidates/review decisions, report sources, timeline rows, audit rows, per-tenant dispute references, and SLA breach claims.
+Owns the in-memory domain data abstraction for the core manual queue: counterparties, disputes, exceptions, adapter/Hub ingestion, ingestion source settings/runs, correlation scoring/candidates/review decisions, report sources, timeline rows, audit rows, per-tenant dispute references, and SLA breach claims.
 
 ## Key files
 
@@ -11,7 +11,7 @@ Owns the in-memory domain data abstraction for the core manual queue: counterpar
 - `src/drw/domain/correlations.clj` - tenant-scoped correlation candidate reads, hydrated detail lookup, and terminal accept/reject decisions.
 - `src/drw/domain/correlator.clj` - pure tenant-scoped candidate scoring across source-ref, entity-id, counterparty, currency, amount, date, and category signals with review/auto-merge threshold bands and deterministic explanations.
 - `src/drw/domain/disputes.clj` - dispute creation, assignment, status transitions, comments, exception attach side effects, and tenant-scoped readers.
-- `src/drw/domain/exceptions.clj` - manual exception creation, duplicate source-ref prevention, tenant-scoped listing, attach flow, correlation candidate listing, and `ingest!` for normalized adapter exceptions.
+- `src/drw/domain/exceptions.clj` - manual exception creation, source-system/kind validation, duplicate source-ref prevention, tenant-scoped listing, attach flow, correlation candidate listing, and `ingest!` for normalized adapter/Hub exceptions.
 - `src/drw/domain/ingestion_sources.clj` - tenant-scoped ingestion source registry materialized from runtime config, settings persistence, pull-now execution through existing poll jobs, and run history.
 - `src/drw/domain/reports.clj` - tenant-scoped dispute audit PDF-source HTML rendering and two-tenant identity leakage smoke checks.
 - `src/drw/domain/sla.clj` - overdue SLA detection, idempotent breach claiming, audit/timeline rows, and Notification Hub event emission helper.

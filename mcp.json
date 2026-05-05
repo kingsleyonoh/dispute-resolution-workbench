@@ -87,6 +87,12 @@
       "path": "/api/exceptions"
     },
     {
+      "name": "ingest_exception_from_hub",
+      "description": "Ingest a Hub-routed exception event using HMAC-SHA256 signature verification.",
+      "method": "POST",
+      "path": "/api/exceptions/from-hub"
+    },
+    {
       "name": "list_correlations",
       "description": "List tenant-scoped correlation candidates.",
       "method": "GET",

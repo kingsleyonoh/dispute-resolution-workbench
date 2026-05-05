@@ -46,7 +46,7 @@ Tenant-scoped dispute operations system for finance teams: manual exceptions, di
 | Path | Purpose |
 |---|---|
 | `src/drw/core.clj` | Application entry point |
-| `src/drw/config.clj` | Env and `.env` config loading, including reconciliation, Contract Lifecycle, NATS, and Webhook Engine toggles |
+| `src/drw/config.clj` | Env and `.env` config loading, including ecosystem toggles and Hub ingress secret |
 | `src/drw/system.clj` | Datomic Local, SQL storage, Postgres, and Redis smoke helpers |
 | `src/drw/setup.clj` | Structured first-run setup checks and setup CLI |
 | `src/drw/db/` | Schema loading, status validation, setup summaries, and tenant scope |
@@ -59,6 +59,7 @@ Tenant-scoped dispute operations system for finance teams: manual exceptions, di
 | `src/drw/adapters/` | Exception adapter protocol/fetcher plus invoice, transaction, Contract Lifecycle, and Webhook Engine adapters |
 | `src/drw/api/` | JSON tenant, dispute, exception, correlation, ingestion source/run, and counterparty handlers |
 | `src/drw/ecosystem/` | Disabled-by-default Notification Hub, Workflow Engine, and dependency-light NATS boundaries |
+| `src/drw/security/` | Shared security helpers, currently HMAC-SHA256 signature verification for Hub ingress |
 | `src/drw/http/` | Pedestal server, JSON helpers, routes, interceptors, and UI/API wiring |
 | `src/drw/ui/` | Hiccup layout, session lookup, forms, handlers, and operator pages including correlation review and ingestion settings |
 | `resources/assets/styles/app.css` | Tailwind input stylesheet |
@@ -73,7 +74,7 @@ Tenant-scoped dispute operations system for finance teams: manual exceptions, di
 `resources/datomic/schema.edn` defines Section 4 Datomic attributes for tenants, users, counterparties, disputes, exceptions, correlation candidates, timelines, SLA policies, playbooks, ingestion sources/runs, audit rows, and reports. `drw.db.schema` loads the resource and validates status transitions in Clojure until Datomic Pro tx-function installation is wired.
 
 ## Environment Variables
-See `.env.example`. Required keys: `APP_ENV`, `PORT`, `DATABASE_URL`, `DATOMIC_URI`, `REDIS_URL`, `SESSION_SECRET`. Setup reads `DATABASE_POOL`, `DATOMIC_STORAGE_DIR`, and `DATOMIC_SQL_TRANSACTOR_PROPERTIES`. Tenant settings: `SELF_REGISTRATION_ENABLED`, `API_KEY_PREFIX`. Ecosystem settings cover Hub, Workflow Engine, Invoice/Transaction Reconciliation, Contract Lifecycle, NATS, and Webhook Engine URLs/API keys plus poll intervals.
+See `.env.example`. Required keys: `APP_ENV`, `PORT`, `DATABASE_URL`, `DATOMIC_URI`, `REDIS_URL`, `SESSION_SECRET`. Setup reads `DATABASE_POOL`, `DATOMIC_STORAGE_DIR`, and `DATOMIC_SQL_TRANSACTOR_PROPERTIES`. Tenant settings: `SELF_REGISTRATION_ENABLED`, `API_KEY_PREFIX`. Ecosystem settings cover Hub, Workflow Engine, Invoice/Transaction Reconciliation, Contract Lifecycle, NATS, and Webhook Engine URLs/API keys plus poll intervals. Public Hub exception ingress verifies `HUB_INGRESS_SECRET`.
 
 ## External Integrations
 | System | Direction | Method | Env |
@@ -94,12 +95,13 @@ See `.env.example`. Required keys: `APP_ENV`, `PORT`, `DATABASE_URL`, `DATOMIC_U
 | Health API | `GET /api/health` | JSON liveness check |
 | Tenant API | `/api/tenants/register`, `/api/tenants/me`, `/tenants/me`, `/api/tenants/rotate-key` | Registration, profile, compatibility profile, and key rotation |
 | Workbench API | `/api/disputes*`, `/api/exceptions`, `/api/correlations*`, `/api/ingestion-*`, `/api/counterparties*` | JSON dispute, exception, correlation, ingestion source/run, and counterparty operations documented in `openapi.yaml` |
+| Public ingress API | `POST /api/exceptions/from-hub` | Hub-routed exception ingestion using `X-Hub-Signature-256` HMAC and `X-Hub-Tenant-Slug` |
 
 ## Tenant Model
-API requests use `X-API-Key` prefix lookup and constant-time hash comparison. Public routes are explicit in `drw.http.interceptors.auth/public-routes`. Protected API routes require `:current-tenant`, rate limits are applied per route, request ids are propagated through `X-Request-Id`, and tenant lifecycle mutations append audit rows. UI requests resolve the same tenant context from an in-memory `drw_session` cookie, `X-DRW-Session`, or `X-API-Key` fallback before calling domain helpers. Cross-tenant misses return 404.
+API requests use `X-API-Key` prefix lookup and constant-time hash comparison. Public routes are explicit in `drw.http.interceptors.auth/public-routes`; Hub ingress resolves tenant by `X-Hub-Tenant-Slug` after HMAC verification. Protected API routes require `:current-tenant`, rate limits use route keys, request ids propagate through `X-Request-Id`, and tenant lifecycle mutations append audit rows. UI requests resolve tenant context from `drw_session`, `X-DRW-Session`, or `X-API-Key`. Cross-tenant misses return 404.
 
 ## Data Contracts
-Tenant fixtures keep at least two tenants with distinct identity literals. Tenant snapshots fail closed, templates use strict undefined lookup, and audit rows are append-only maps from `drw.audit.recorder`. Domain state is process-local until durable Datomic mutations are wired; UI/API handlers call domain helpers with resolved tenant/actor context. Reports fail closed on cross-tenant dispute ids; SLA breach claims are idempotent per `[dispute-id due-at]`. Correlator scoring is pure, tenant-scoped, threshold-banded, and deterministic. Ingestion stores normalized adapter exceptions, creates unmatched disputes, records pending candidates, and auto-merges only when configured. Ingestion sources materialize tenant defaults from runtime config, persist tenant overrides, and record pull-now run history with counts, cursor, errors, and source refs. Correlation review exposes tenant-scoped JSON/UI accept/reject flows; accept attaches exceptions plus audit/timeline side effects, while reject marks terminal status without attaching. Adapter fetches are disabled-safe, tenant/source scoped, retryable, timeout-classified, and circuit-isolated. Invoice, transaction, Contract Lifecycle, and Webhook Engine jobs normalize upstream exceptions through ingestion and skip same-tenant duplicate source refs. Contract Lifecycle NATS validates event tenant identity before domain ingestion.
+Tenant fixtures keep at least two tenants with distinct identity literals. Tenant snapshots fail closed, templates use strict undefined lookup, and audit rows are append-only maps. Domain state is process-local until durable Datomic mutations are wired; UI/API handlers call domain helpers with resolved tenant/actor context. Reports fail closed on cross-tenant dispute ids; SLA breach claims are idempotent. Correlator scoring is pure, tenant-scoped, threshold-banded, and deterministic. Ingestion stores normalized exceptions, creates unmatched disputes, records pending candidates, and auto-merges only when configured. Ingestion sources materialize tenant defaults from runtime config, persist overrides, and record pull-now history. Correlation review accept/reject flows are tenant-scoped. Adapter fetches are disabled-safe, tenant/source scoped, retryable, timeout-classified, and circuit-isolated. Invoice, transaction, Contract Lifecycle, Webhook Engine, and HMAC Hub ingress normalize upstream exceptions through ingestion and reject same-tenant duplicate source refs.
 
 ## Deep References
 | Area | Planned path |
@@ -117,6 +119,7 @@ Tenant fixtures keep at least two tenants with distinct identity literals. Tenan
 | Adapter foundation | `.agent/knowledge/modules/src-drw-adapters.md` |
 | Tenant API handlers | `.agent/knowledge/modules/src-drw-api.md` |
 | Ecosystem client stubs | `.agent/knowledge/modules/src-drw-ecosystem.md` |
+| Security helpers | `.agent/knowledge/modules/src-drw-security.md` |
 | HTTP server and routes | `.agent/knowledge/modules/src-drw-http.md` |
 | UI shell | `.agent/knowledge/modules/src-drw-ui.md` |
 | Shared foundation primitives | `.agent/knowledge/foundation/` |
