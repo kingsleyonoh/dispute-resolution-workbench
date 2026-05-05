@@ -46,17 +46,17 @@ Tenant-scoped dispute operations system for finance teams, covering manual excep
 | Path | Purpose |
 |---|---|
 | `src/drw/core.clj` | Application entry point |
-| `src/drw/config.clj` | Env and `.env` config loading, including reconciliation, Contract Lifecycle, and NATS toggles |
+| `src/drw/config.clj` | Env and `.env` config loading, including reconciliation, Contract Lifecycle, NATS, and Webhook Engine toggles |
 | `src/drw/system.clj` | Datomic Local, SQL storage, Postgres, and Redis smoke helpers |
 | `src/drw/setup.clj` | Structured first-run setup checks and setup CLI |
 | `src/drw/db/` | Schema loading, status validation, setup summaries, and tenant scope |
 | `src/drw/domain/` | Process-local counterparties, disputes, exceptions, reports, timeline, and audit |
-| `src/drw/jobs/` | Offline jobs for SLA reaping, reconciliation polling, Contract Lifecycle backfill, and NATS ingestion |
+| `src/drw/jobs/` | Offline jobs for SLA reaping, reconciliation polling, Contract Lifecycle backfill/NATS ingestion, and Webhook Engine DLQ polling |
 | `src/drw/fixtures.clj` | Tenant fixture loader with identity-field validation |
 | `src/drw/tenants/` | Tenant identity snapshots for config-driven surfaces |
 | `src/drw/templates/` | Strict template token lookup helpers |
 | `src/drw/audit/` | Append-only audit transaction construction |
-| `src/drw/adapters/` | Exception adapter protocol/fetcher plus invoice, transaction, and Contract Lifecycle adapters |
+| `src/drw/adapters/` | Exception adapter protocol/fetcher plus invoice, transaction, Contract Lifecycle, and Webhook Engine adapters |
 | `src/drw/api/` | JSON tenant, dispute, exception, and counterparty handlers |
 | `src/drw/ecosystem/` | Disabled-by-default Notification Hub, Workflow Engine, and dependency-light NATS boundaries |
 | `src/drw/http/` | Pedestal server, JSON helpers, routes, interceptors, and page wiring |
@@ -73,7 +73,7 @@ Tenant-scoped dispute operations system for finance teams, covering manual excep
 `resources/datomic/schema.edn` defines Section 4 Datomic attributes for tenants, users, counterparties, disputes, exceptions, correlation candidates, timelines, SLA policies, playbooks, ingestion sources/runs, audit rows, and reports. `drw.db.schema` loads the resource and validates status transitions in Clojure until Datomic Pro tx-function installation is wired.
 
 ## Environment Variables
-See `.env.example`. Required keys: `APP_ENV`, `PORT`, `DATABASE_URL`, `DATOMIC_URI`, `REDIS_URL`, `SESSION_SECRET`. Setup reads `DATABASE_POOL`, `DATOMIC_STORAGE_DIR`, and `DATOMIC_SQL_TRANSACTOR_PROPERTIES`. Tenant settings: `SELF_REGISTRATION_ENABLED`, `API_KEY_PREFIX`. Ecosystem settings cover Notification Hub, Workflow Engine, Invoice Reconciliation, Contract Lifecycle, Transaction Reconciliation, NATS, and Webhook Engine URLs/API keys plus poll intervals.
+See `.env.example`. Required keys: `APP_ENV`, `PORT`, `DATABASE_URL`, `DATOMIC_URI`, `REDIS_URL`, `SESSION_SECRET`. Setup reads `DATABASE_POOL`, `DATOMIC_STORAGE_DIR`, and `DATOMIC_SQL_TRANSACTOR_PROPERTIES`. Tenant settings: `SELF_REGISTRATION_ENABLED`, `API_KEY_PREFIX`. Ecosystem settings cover Notification Hub, Workflow Engine, Invoice Reconciliation, Contract Lifecycle, Transaction Reconciliation, NATS, and Webhook Engine URLs/API keys plus poll intervals including `WEBHOOK_ENGINE_DLQ_POLL_INTERVAL_SECONDS`.
 
 ## External Integrations
 | System | Direction | Method | Env |
@@ -81,7 +81,7 @@ See `.env.example`. Required keys: `APP_ENV`, `PORT`, `DATABASE_URL`, `DATOMIC_U
 | Invoice Reconciliation Engine | inbound pull | REST adapter | `INVOICE_RECON_URL`, `INVOICE_RECON_API_KEY` |
 | Contract Lifecycle Engine | inbound pull/subscribe | REST + NATS | `CONTRACT_LIFECYCLE_URL`, `NATS_URL` |
 | Transaction Reconciliation Engine | inbound pull | REST adapter | `TRANSACTION_RECON_URL`, `TRANSACTION_RECON_API_KEY` |
-| Webhook Ingestion Engine | inbound pull | REST | `WEBHOOK_ENGINE_URL` |
+| Webhook Ingestion Engine | inbound pull | REST DLQ poll | `WEBHOOK_ENGINE_URL`, `WEBHOOK_ENGINE_API_KEY` |
 | Notification Hub | outbound | REST events | `NOTIFICATION_HUB_URL`, `NOTIFICATION_HUB_API_KEY` |
 | Workflow Automation Engine | outbound | REST workflow execute | `WORKFLOW_ENGINE_URL`, `WORKFLOW_ENGINE_API_KEY` |
 | Hub Ingress | inbound | HMAC webhook | `HUB_INGRESS_SECRET` |
@@ -99,7 +99,7 @@ See `.env.example`. Required keys: `APP_ENV`, `PORT`, `DATABASE_URL`, `DATOMIC_U
 API requests use `X-API-Key` prefix lookup and constant-time hash comparison. Public routes are explicit in `drw.http.interceptors.auth/public-routes`. Protected API routes require `:current-tenant`, rate limits are applied per route, request ids are propagated through `X-Request-Id`, and tenant lifecycle mutations append audit rows. UI requests resolve the same tenant context from an in-memory `drw_session` cookie, `X-DRW-Session`, or `X-API-Key` fallback before calling domain helpers. Cross-tenant misses return 404.
 
 ## Data Contracts
-Tenant fixtures must keep at least two tenants with distinct identity literals. Tenant snapshots fail closed on missing identity fields, templates use strict undefined lookup, and audit rows are append-only maps from `drw.audit.recorder`. Domain state is process-local until durable Datomic mutations are wired. UI handlers call domain helpers with resolved tenant/actor context. Reports render tenant-scoped PDF-source HTML and fail closed on cross-tenant dispute ids. The SLA reaper emits one breach per `[dispute-id due-at]`. Adapter fetches are disabled-safe, tenant/source scoped, retryable, timeout-classified, and circuit-isolated. Invoice, transaction, and Contract Lifecycle jobs normalize upstream exceptions, store pending manual exceptions, preserve cursors where applicable, and skip same-tenant duplicate source refs. Contract Lifecycle NATS ingestion validates event tenant identity before domain storage.
+Tenant fixtures must keep at least two tenants with distinct identity literals. Tenant snapshots fail closed on missing identity fields, templates use strict undefined lookup, and audit rows are append-only maps from `drw.audit.recorder`. Domain state is process-local until durable Datomic mutations are wired. UI handlers call domain helpers with resolved tenant/actor context. Reports render tenant-scoped PDF-source HTML and fail closed on cross-tenant dispute ids. The SLA reaper emits one breach per `[dispute-id due-at]`. Adapter fetches are disabled-safe, tenant/source scoped, retryable, timeout-classified, and circuit-isolated; implicit default circuit state is also isolated by injected transport identity. Invoice, transaction, Contract Lifecycle, and Webhook Engine jobs normalize upstream exceptions, store pending manual exceptions, preserve cursors where applicable, and skip same-tenant duplicate source refs. Contract Lifecycle NATS ingestion validates event tenant identity before domain storage.
 
 ## Deep References
 | Area | Planned path |
