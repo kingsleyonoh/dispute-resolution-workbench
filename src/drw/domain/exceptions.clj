@@ -12,6 +12,10 @@
 (def valid-source-systems
   #{:invoice-recon :contract-lifecycle :transaction-recon :webhook-engine :manual})
 
+(def valid-kinds
+  #{:invoice-discrepancy :contract-breach :contract-conflict
+    :payment-mismatch :delivery-failure :manual})
+
 (def default-ingestion-config
   {:auto-merge-enabled false})
 
@@ -34,7 +38,10 @@
   (when-not (contains? valid-source-systems
                        (or (:source-system attrs) :manual))
     (reject! "source-system is invalid"
-             {:type :validation-error :field :source-system})))
+             {:type :validation-error :field :source-system}))
+  (when-not (contains? valid-kinds (:kind attrs))
+    (reject! "kind is invalid"
+             {:type :validation-error :field :kind})))
 
 (defn list-by-tenant
   ([tenant-id] (list-by-tenant tenant-id {}))

@@ -43,6 +43,7 @@
    :notification-hub-enabled (= "true" (get env "NOTIFICATION_HUB_ENABLED"))
    :notification-hub-url (get env "NOTIFICATION_HUB_URL")
    :notification-hub-api-key (get env "NOTIFICATION_HUB_API_KEY")
+   :hub-ingress-secret (get env "HUB_INGRESS_SECRET")
    :workflow-engine-enabled (= "true" (get env "WORKFLOW_ENGINE_ENABLED"))
    :workflow-engine-url (get env "WORKFLOW_ENGINE_URL")
    :workflow-engine-api-key (get env "WORKFLOW_ENGINE_API_KEY")

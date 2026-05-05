@@ -42,6 +42,8 @@
            (:disputes-get routes-by-name)))
     (is (= {:path "/api/exceptions" :method :post}
            (:exceptions-create routes-by-name)))
+    (is (= {:path "/api/exceptions/from-hub" :method :post}
+           (:exceptions-from-hub routes-by-name)))
     (is (= {:path "/api/correlations" :method :get}
            (:correlations-list routes-by-name)))
     (is (= {:path "/api/correlations/:id/accept" :method :post}

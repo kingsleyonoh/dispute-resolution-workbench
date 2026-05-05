@@ -116,6 +116,9 @@
        ["/api/exceptions" :post
         (api-chain cfg (exceptions/create-handler cfg))
         :route-name :exceptions-create]
+       ["/api/exceptions/from-hub" :post
+        (api-chain cfg (exceptions/from-hub-handler cfg))
+        :route-name :exceptions-from-hub]
        ["/api/correlations" :get
         (api-chain cfg (correlations/list-handler cfg))
         :route-name :correlations-list]

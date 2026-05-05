@@ -115,6 +115,9 @@
 (defn tenant-by-id [tenant-id]
   (get @tenants* tenant-id))
 
+(defn tenant-by-slug [slug]
+  (some #(when (= slug (:tenant/slug %)) %) (vals @tenants*)))
+
 (defn tenant-by-api-key [api-key]
   (let [prefix (when-not (str/blank? api-key) (api-key-prefix api-key))
         tenant-id (get @prefixes* prefix)

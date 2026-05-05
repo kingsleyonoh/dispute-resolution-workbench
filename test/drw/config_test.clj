@@ -20,6 +20,7 @@
     (is (= "ECOSYSTEM_EVENTS" (:nats-stream-name cfg)))
     (is (= false (:transaction-recon-enabled cfg)))
     (is (= 900 (:transaction-recon-poll-interval-seconds cfg)))
+    (is (= "" (:hub-ingress-secret cfg)))
     (is (= false (:webhook-engine-enabled cfg)))
     (is (= 1800 (:webhook-engine-dlq-poll-interval-seconds cfg)))))
 

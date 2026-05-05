@@ -32,7 +32,7 @@
              (let [request (:request context)
                    api-key (header request "X-API-Key")]
                (cond
-                 (and (str/blank? api-key) (public-route? request))
+                 (public-route? request)
                  (assoc-in context [:request :public-route?] true)
 
                  (str/blank? api-key)

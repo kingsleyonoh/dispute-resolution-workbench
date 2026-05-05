@@ -296,6 +296,45 @@ paths:
           $ref: "#/components/responses/ValidationError"
         "409":
           description: Duplicate source reference
+  /api/exceptions/from-hub:
+    post:
+      summary: Ingest a Hub-routed exception event
+      operationId: ingestExceptionFromHub
+      security:
+        - HubSignature: []
+      parameters:
+        - name: X-Hub-Signature-256
+          in: header
+          required: true
+          schema:
+            type: string
+            pattern: "^sha256=[0-9a-f]{64}$"
+          description: HMAC-SHA256 over the raw request body.
+        - name: X-Hub-Tenant-Slug
+          in: header
+          required: true
+          schema:
+            type: string
+          description: Tenant slug for the Hub event destination.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HubExceptionIngest"
+      responses:
+        "201":
+          description: Exception ingested through the domain pipeline
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          description: Missing or invalid Hub HMAC signature
+        "403":
+          description: Tenant is disabled
+        "404":
+          description: Tenant not found
+        "409":
+          description: Duplicate source reference
   /api/correlations:
     get:
       summary: List tenant-scoped correlation candidates
@@ -537,6 +576,10 @@ components:
       type: apiKey
       in: header
       name: X-API-Key
+    HubSignature:
+      type: apiKey
+      in: header
+      name: X-Hub-Signature-256
   responses:
     Unauthorized:
       description: Missing or invalid API key
@@ -647,6 +690,43 @@ components:
           format: date-time
         monetary_impact_cents:
           type: integer
+    HubExceptionIngest:
+      type: object
+      required:
+        - source_ref
+        - source_system
+        - kind
+        - currency
+        - observed_at
+      properties:
+        source_ref:
+          type: string
+        source_system:
+          type: string
+          enum:
+            - invoice-recon
+            - transaction-recon
+            - contract-lifecycle
+            - webhook-engine
+        kind:
+          type: string
+          enum:
+            - invoice-discrepancy
+            - contract-breach
+            - contract-conflict
+            - payment-mismatch
+            - delivery-failure
+        currency:
+          type: string
+        observed_at:
+          type: string
+          format: date-time
+        monetary_impact_cents:
+          type: integer
+        source_url:
+          type: string
+        raw_payload:
+          type: object
     Exception:
       type: object
       properties:
