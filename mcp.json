@@ -7,6 +7,30 @@
       "description": "Read the app liveness status.",
       "method": "GET",
       "path": "/api/health"
+    },
+    {
+      "name": "register_tenant",
+      "description": "Register a tenant and return the first raw API key.",
+      "method": "POST",
+      "path": "/api/tenants/register"
+    },
+    {
+      "name": "get_tenant_profile",
+      "description": "Read the authenticated tenant profile.",
+      "method": "GET",
+      "path": "/api/tenants/me"
+    },
+    {
+      "name": "get_tenant_profile_compat",
+      "description": "Read the authenticated tenant profile through the compatibility path.",
+      "method": "GET",
+      "path": "/tenants/me"
+    },
+    {
+      "name": "rotate_tenant_api_key",
+      "description": "Rotate the authenticated tenant API key.",
+      "method": "POST",
+      "path": "/api/tenants/rotate-key"
     }
   ]
 }

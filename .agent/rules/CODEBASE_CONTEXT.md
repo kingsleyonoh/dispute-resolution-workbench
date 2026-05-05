@@ -16,7 +16,7 @@ Single-queue dispute operations system for finance teams. It consolidates except
 | Cache / Queue | Redis 7 with Carmine |
 | SQL access | next.jdbc |
 | UI | Hiccup 2, HTMX 2.0.4, Tailwind CSS 3.4 |
-| Auth | X-API-Key tenant interceptor plus buddy-auth session cookie |
+| Auth | X-API-Key tenant interceptor; UI session auth planned |
 | Tests | clojure.test, Kaocha, Testcontainers, Playwright via clj-chrome-devtools |
 | Jobs | core.async and Carmine-backed scheduler |
 | Deploy | Docker Compose on Hetzner VPS at `disputes.kingsleyonoh.com` |
@@ -54,7 +54,9 @@ Single-queue dispute operations system for finance teams. It consolidates except
 | `src/drw/tenants/` | Tenant identity snapshot capture for config-driven surfaces |
 | `src/drw/templates/` | Strict template token lookup helpers |
 | `src/drw/audit/` | Append-only audit transaction construction |
-| `src/drw/http/` | Pedestal server, routes, and handlers |
+| `src/drw/api/` | JSON API handlers, currently tenant lifecycle endpoints |
+| `src/drw/ecosystem/` | Disabled-by-default Notification Hub and Workflow Engine client stubs |
+| `src/drw/http/` | Pedestal server, routes, JSON helpers, and interceptor chain |
 | `src/drw/ui/` | Hiccup layout and HTMX-ready pages |
 | `resources/assets/styles/app.css` | Tailwind input stylesheet |
 | `resources/public/assets/app.css` | Generated Tailwind output served by Pedestal |
@@ -67,7 +69,7 @@ Single-queue dispute operations system for finance teams. It consolidates except
 `resources/datomic/schema.edn` defines Section 4 Datomic attributes for tenants, users, counterparties, disputes, exceptions, correlation candidates, timeline entries, SLA policies, playbooks, ingestion sources/runs, audit log rows, and report artifacts. `drw.db.schema` loads the resource, separates tx-function specs, and validates dispute, correlation, and report status transitions as pure Clojure until executable Datomic Pro tx-function installation is wired.
 
 ## Environment Variables
-See `.env.example`. Runtime-required keys enforced by `drw.config`: `APP_ENV`, `PORT`, `DATABASE_URL`, `DATOMIC_URI`, `REDIS_URL`, `SESSION_SECRET`. Setup also reads `DATABASE_POOL`, `DATOMIC_STORAGE_DIR`, and `DATOMIC_SQL_TRANSACTOR_PROPERTIES`. Ecosystem integrations are feature-flagged with `*_ENABLED=false` defaults.
+See `.env.example`. Runtime-required keys enforced by `drw.config`: `APP_ENV`, `PORT`, `DATABASE_URL`, `DATOMIC_URI`, `REDIS_URL`, `SESSION_SECRET`. Setup also reads `DATABASE_POOL`, `DATOMIC_STORAGE_DIR`, and `DATOMIC_SQL_TRANSACTOR_PROPERTIES`. Tenant API settings include `SELF_REGISTRATION_ENABLED` and `API_KEY_PREFIX`. Ecosystem client stubs read `NOTIFICATION_HUB_ENABLED`, `NOTIFICATION_HUB_URL`, `NOTIFICATION_HUB_API_KEY`, `WORKFLOW_ENGINE_ENABLED`, `WORKFLOW_ENGINE_URL`, and `WORKFLOW_ENGINE_API_KEY`.
 
 ## External Integrations
 | System | Direction | Method | Env |
@@ -85,9 +87,13 @@ See `.env.example`. Runtime-required keys enforced by `drw.config`: `APP_ENV`, `
 |---|---|---|
 | `GET /` | `drw.http.handlers/home` | Server-rendered HTMX console skeleton |
 | `GET /api/health` | `drw.http.handlers/health` | JSON liveness check |
+| `POST /api/tenants/register` | `drw.api.tenants/register-handler` | Public self-registration that returns the raw API key once |
+| `GET /api/tenants/me` | `drw.api.tenants/profile-handler` | Authenticated tenant profile lookup |
+| `GET /tenants/me` | `drw.api.tenants/profile-handler` | Compatibility tenant profile lookup |
+| `POST /api/tenants/rotate-key` | `drw.api.tenants/rotate-key-handler` | Authenticated API key rotation |
 
 ## Tenant Model
-API requests use `X-API-Key` prefix lookup and constant-time hash comparison. UI requests use buddy-auth sessions that resolve to the same tenant context. Every mutation records tenant-scoped audit data, and cross-tenant misses return 404.
+API requests use `X-API-Key` prefix lookup and constant-time hash comparison. Public routes are explicit in `drw.http.interceptors.auth/public-routes`. Protected routes require `:current-tenant`, rate limits are applied per route, request ids are propagated through `X-Request-Id`, and tenant lifecycle mutations append audit rows. UI requests will use buddy-auth sessions that resolve to the same tenant context. Cross-tenant misses return 404.
 
 ## Data Contracts
 Tenant fixture data lives in `resources/fixtures/tenants.edn` and must keep at least two tenants with distinct identity literals. Tenant snapshot generation uses `drw.db.scope/entity-by-tenant-id` and fails closed on missing tenant identity fields. Template lookup uses strict undefined behavior through `drw.templates.strict-fetch`; missing tokens throw instead of rendering empty strings. Audit rows are append-only insert maps built by `drw.audit.recorder`.
@@ -103,6 +109,8 @@ Tenant fixture data lives in `resources/fixtures/tenants.edn` and must keep at l
 | Tenant snapshots | `.agent/knowledge/modules/src-drw-tenants.md` |
 | Strict template lookup | `.agent/knowledge/modules/src-drw-templates.md` |
 | Audit recorder | `.agent/knowledge/modules/src-drw-audit.md` |
+| Tenant API handlers | `.agent/knowledge/modules/src-drw-api.md` |
+| Ecosystem client stubs | `.agent/knowledge/modules/src-drw-ecosystem.md` |
 | HTTP server and routes | `.agent/knowledge/modules/src-drw-http.md` |
 | UI shell | `.agent/knowledge/modules/src-drw-ui.md` |
 | Shared foundation primitives | `.agent/knowledge/foundation/` |

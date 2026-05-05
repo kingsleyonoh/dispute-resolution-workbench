@@ -24,9 +24,167 @@ paths:
                     type: string
                     enum:
                       - up
+  /api/tenants/register:
+    post:
+      summary: Register a tenant and issue its first API key
+      operationId: registerTenant
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                legal_name:
+                  type: string
+                legalName:
+                  type: string
+      responses:
+        "201":
+          description: Tenant registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TenantRegistration"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "403":
+          description: Self-registration is disabled
+  /api/tenants/me:
+    get:
+      summary: Read the authenticated tenant profile
+      operationId: getTenantProfile
+      security:
+        - ApiKeyAuth: []
+      responses:
+        "200":
+          description: Tenant profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TenantProfile"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: Tenant not found
+  /tenants/me:
+    get:
+      summary: Read the authenticated tenant profile through compatibility path
+      operationId: getTenantProfileCompat
+      security:
+        - ApiKeyAuth: []
+      responses:
+        "200":
+          description: Tenant profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TenantProfile"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: Tenant not found
+  /api/tenants/rotate-key:
+    post:
+      summary: Rotate the authenticated tenant API key
+      operationId: rotateTenantApiKey
+      security:
+        - ApiKeyAuth: []
+      responses:
+        "200":
+          description: New raw API key
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - apiKey
+                properties:
+                  apiKey:
+                    type: string
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: Tenant not found
 components:
   securitySchemes:
     ApiKeyAuth:
       type: apiKey
       in: header
       name: X-API-Key
+  responses:
+    Unauthorized:
+      description: Missing or invalid API key
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    ValidationError:
+      description: Request validation failed
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+  schemas:
+    TenantRegistration:
+      type: object
+      required:
+        - id
+        - name
+        - slug
+        - apiKey
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        apiKey:
+          type: string
+    TenantProfile:
+      type: object
+      required:
+        - id
+        - name
+        - slug
+        - isActive
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        legalName:
+          type: string
+        displayName:
+          type: string
+        isActive:
+          type: boolean
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: object
+          required:
+            - code
+            - message
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              type: array
+              items:
+                type: object

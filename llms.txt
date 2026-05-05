@@ -8,12 +8,12 @@ CFOs, Heads of Finance Operations, supervisors, and operations analysts at B2B S
 ## Architecture
 - Clojure 1.12, Pedestal 0.7, Datomic Local smoke checks, Datomic Pro/PostgreSQL 16 storage config, Redis 7.
 - Server-rendered Hiccup + HTMX UI with Tailwind CSS.
-- API key and session authentication both resolve to a mandatory current tenant.
+- API-key authentication resolves protected requests to a mandatory current tenant; session auth is planned for the UI surface.
 - External adapters are optional; manual disputes are the baseline product.
-- Current data contract includes `resources/datomic/schema.edn`, `resources/fixtures/tenants.edn`, tenant-scope helpers, tenant snapshots, strict template lookup, and append-only audit transaction construction.
+- Current data contract includes `resources/datomic/schema.edn`, `resources/fixtures/tenants.edn`, tenant-scope helpers, tenant snapshots, strict template lookup, append-only audit transaction construction, in-memory tenant API-key store, and disabled-by-default ecosystem client stubs.
 
 ## API Surface
-Current wired routes are `GET /api/health` for JSON liveness and `GET /` for the server-rendered HTMX shell. The broader tenant, dispute, exception, correlation, SLA, audit, and integration APIs are planned by the PRD but not wired yet.
+Current wired routes are `GET /api/health` for JSON liveness, `GET /` for the server-rendered HTMX shell, `POST /api/tenants/register` for self-registration, `GET /api/tenants/me` and `GET /tenants/me` for tenant profile lookup, and `POST /api/tenants/rotate-key` for API-key rotation. The broader dispute, exception, correlation, SLA, audit, and integration APIs are planned by the PRD but not wired yet.
 
 ## Integrations
 Consumes from Invoice Reconciliation, Contract Lifecycle, Transaction Reconciliation, and optional Webhook Ingestion Engine. Emits to Notification Hub and triggers Workflow Automation Engine.
