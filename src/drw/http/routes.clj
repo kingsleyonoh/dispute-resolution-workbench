@@ -1,5 +1,8 @@
 (ns drw.http.routes
-  (:require [drw.api.tenants :as tenants]
+  (:require [drw.api.counterparties :as counterparties]
+            [drw.api.disputes :as disputes]
+            [drw.api.exceptions :as exceptions]
+            [drw.api.tenants :as tenants]
             [drw.http.handlers :as handlers]
             [drw.http.interceptors.audit :as audit]
             [drw.http.interceptors.auth :as auth]
@@ -42,4 +45,40 @@
         :route-name :tenant-profile-compat]
        ["/api/tenants/rotate-key" :post
         (api-chain cfg (tenants/rotate-key-handler cfg))
-        :route-name :tenant-rotate-key]})))
+        :route-name :tenant-rotate-key]
+       ["/api/disputes" :get
+        (api-chain cfg (disputes/list-handler cfg))
+        :route-name :disputes-list]
+       ["/api/disputes" :post
+        (api-chain cfg (disputes/create-handler cfg))
+        :route-name :disputes-create]
+       ["/api/disputes/:id" :get
+        (api-chain cfg (disputes/get-handler cfg))
+        :route-name :disputes-get]
+       ["/api/disputes/:id/assign" :patch
+        (api-chain cfg (disputes/assign-handler cfg))
+        :route-name :disputes-assign]
+       ["/api/disputes/:id/transition" :patch
+        (api-chain cfg (disputes/transition-handler cfg))
+        :route-name :disputes-transition]
+       ["/api/disputes/:id/comments" :post
+        (api-chain cfg (disputes/comment-handler cfg))
+        :route-name :disputes-comment]
+       ["/api/disputes/:id/attach-exception" :post
+        (api-chain cfg (disputes/attach-exception-handler cfg))
+        :route-name :disputes-attach-exception]
+       ["/api/exceptions" :get
+        (api-chain cfg (exceptions/list-handler cfg))
+        :route-name :exceptions-list]
+       ["/api/exceptions" :post
+        (api-chain cfg (exceptions/create-handler cfg))
+        :route-name :exceptions-create]
+       ["/api/counterparties" :get
+        (api-chain cfg (counterparties/list-handler cfg))
+        :route-name :counterparties-list]
+       ["/api/counterparties/:id" :get
+        (api-chain cfg (counterparties/get-handler cfg))
+        :route-name :counterparties-get]
+       ["/api/counterparties/:id/merge" :post
+        (api-chain cfg (counterparties/merge-handler cfg))
+        :route-name :counterparties-merge]})))

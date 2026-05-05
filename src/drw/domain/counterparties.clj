@@ -112,6 +112,30 @@
     (audit! tenant-id "counterparty.deleted" before before nil actor)
     {:status :deleted :counterparty-id counterparty-id}))
 
+(defn merge! [tenant-id source-id target-id actor]
+  (when (= source-id target-id)
+    (reject! "counterparty cannot merge into itself"
+             {:type :validation-error :field :merge-into-id}))
+  (let [source (or (get-by-id tenant-id source-id)
+                   (reject! "source counterparty not found"
+                            {:type :counterparty/not-found}))
+        target (or (get-by-id tenant-id target-id)
+                   (reject! "target counterparty not found"
+                            {:type :counterparty/not-found}))]
+    (swap! state/disputes*
+           (fn [disputes]
+             (into {}
+                   (map (fn [[id dispute]]
+                          [id (if (and (= tenant-id (:dispute/tenant-id dispute))
+                                       (= source-id
+                                          (:dispute/counterparty-id dispute)))
+                                (assoc dispute :dispute/counterparty-id target-id)
+                                dispute)]))
+                   disputes)))
+    (swap! state/counterparties* dissoc source-id)
+    (audit! tenant-id "counterparty.merged" source source target actor)
+    target))
+
 (defn- external-ref-match? [counterparty source-system external-ref]
   (= external-ref
      (get (:counterparty/external-refs counterparty) source-system)))

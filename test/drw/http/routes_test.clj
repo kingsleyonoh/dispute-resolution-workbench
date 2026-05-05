@@ -16,7 +16,17 @@
     (is (= {:path "/tenants/me" :method :get}
            (:tenant-profile-compat routes-by-name)))
     (is (= {:path "/api/tenants/rotate-key" :method :post}
-           (:tenant-rotate-key routes-by-name)))))
+           (:tenant-rotate-key routes-by-name)))
+    (is (= {:path "/api/disputes" :method :get}
+           (:disputes-list routes-by-name)))
+    (is (= {:path "/api/disputes" :method :post}
+           (:disputes-create routes-by-name)))
+    (is (= {:path "/api/disputes/:id" :method :get}
+           (:disputes-get routes-by-name)))
+    (is (= {:path "/api/exceptions" :method :post}
+           (:exceptions-create routes-by-name)))
+    (is (= {:path "/api/counterparties" :method :get}
+           (:counterparties-list routes-by-name)))))
 
 (deftest rejects-non-boolean-dev-route-toggle
   (testing "route construction rejects malformed setup options"
