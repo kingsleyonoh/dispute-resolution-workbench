@@ -111,6 +111,30 @@
       "path": "/api/correlations/{id}/reject"
     },
     {
+      "name": "list_ingestion_sources",
+      "description": "List tenant-scoped ingestion source settings.",
+      "method": "GET",
+      "path": "/api/ingestion-sources"
+    },
+    {
+      "name": "save_ingestion_source",
+      "description": "Save tenant-scoped ingestion source settings.",
+      "method": "POST",
+      "path": "/api/ingestion-sources"
+    },
+    {
+      "name": "pull_ingestion_source_now",
+      "description": "Run an ingestion source pull immediately.",
+      "method": "POST",
+      "path": "/api/ingestion-sources/{id}/pull-now"
+    },
+    {
+      "name": "list_ingestion_runs",
+      "description": "List tenant-scoped ingestion run history.",
+      "method": "GET",
+      "path": "/api/ingestion-runs"
+    },
+    {
       "name": "list_counterparties",
       "description": "List tenant-scoped counterparties.",
       "method": "GET",

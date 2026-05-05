@@ -7,7 +7,7 @@ Owns offline jobs that run domain maintenance, adapter polling, and event ingest
 ## Key files
 
 - `src/drw/jobs/sla_reaper.clj` - runs one SLA sweep and returns checked/breached counts.
-- `src/drw/jobs/adapter_poll.clj` - shared poll-job runner that calls an `ExceptionAdapter`, ingests normalized exceptions through `drw.domain.exceptions/ingest!`, counts stored/skipped/rejected rows, and returns a run map.
+- `src/drw/jobs/adapter_poll.clj` - shared poll-job runner that calls an `ExceptionAdapter`, ingests normalized exceptions through `drw.domain.exceptions/ingest!`, counts stored/skipped/rejected rows, returns source refs, and returns a run map.
 - `src/drw/jobs/invoice_recon_poll.clj` - builds tenant/source config from invoice reconciliation env values and runs the invoice adapter with adapter actor metadata.
 - `src/drw/jobs/transaction_recon_poll.clj` - builds tenant/source config from transaction reconciliation env values and runs the transaction adapter with adapter actor metadata.
 - `src/drw/jobs/contract_lifecycle_backfill.clj` - builds tenant/source config from Contract Lifecycle env values and runs the contract adapter through the shared poll runner.
@@ -22,7 +22,7 @@ Owns offline jobs that run domain maintenance, adapter polling, and event ingest
 ## Dependencies
 
 - Upstream: `drw.domain.sla`, `drw.domain.state`, `drw.domain.disputes`, `drw.domain.exceptions`, `drw.audit.recorder`, `drw.ecosystem.hub-client`, and `drw.adapters.*`.
-- Downstream: future scheduler wiring should call `drw.jobs.sla-reaper/run-once!`, reconciliation poll `run-once!` wrappers, Contract Lifecycle backfill/NATS `run-once!` wrappers, or Webhook Engine DLQ `run-once!` rather than scanning domain atoms directly.
+- Downstream: future scheduler wiring and operator pull-now actions should call `drw.jobs.sla-reaper/run-once!`, reconciliation poll `run-once!` wrappers, Contract Lifecycle backfill/NATS `run-once!` wrappers, or Webhook Engine DLQ `run-once!` rather than scanning domain atoms directly.
 
 ## Tests
 

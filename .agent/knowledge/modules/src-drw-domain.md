@@ -2,16 +2,17 @@
 
 ## Purpose
 
-Owns the in-memory domain data abstraction for the core manual queue: counterparties, disputes, exceptions, adapter ingestion, correlation scoring/candidates/review decisions, report sources, timeline rows, audit rows, per-tenant dispute references, and SLA breach claims.
+Owns the in-memory domain data abstraction for the core manual queue: counterparties, disputes, exceptions, adapter ingestion, ingestion source settings/runs, correlation scoring/candidates/review decisions, report sources, timeline rows, audit rows, per-tenant dispute references, and SLA breach claims.
 
 ## Key files
 
-- `src/drw/domain/state.clj` - process-local atoms for domain entities and correlation candidates plus append-only timeline and audit append helpers.
+- `src/drw/domain/state.clj` - process-local atoms for domain entities, correlation candidates, ingestion source settings/runs, append-only timeline, and audit append helpers.
 - `src/drw/domain/counterparties.clj` - counterparty CRUD, normalized-name matching, and source external-ref resolution.
 - `src/drw/domain/correlations.clj` - tenant-scoped correlation candidate reads, hydrated detail lookup, and terminal accept/reject decisions.
 - `src/drw/domain/correlator.clj` - pure tenant-scoped candidate scoring across source-ref, entity-id, counterparty, currency, amount, date, and category signals with review/auto-merge threshold bands and deterministic explanations.
 - `src/drw/domain/disputes.clj` - dispute creation, assignment, status transitions, comments, exception attach side effects, and tenant-scoped readers.
 - `src/drw/domain/exceptions.clj` - manual exception creation, duplicate source-ref prevention, tenant-scoped listing, attach flow, correlation candidate listing, and `ingest!` for normalized adapter exceptions.
+- `src/drw/domain/ingestion_sources.clj` - tenant-scoped ingestion source registry materialized from runtime config, settings persistence, pull-now execution through existing poll jobs, and run history.
 - `src/drw/domain/reports.clj` - tenant-scoped dispute audit PDF-source HTML rendering and two-tenant identity leakage smoke checks.
 - `src/drw/domain/sla.clj` - overdue SLA detection, idempotent breach claiming, audit/timeline rows, and Notification Hub event emission helper.
 
@@ -25,6 +26,7 @@ Owns the in-memory domain data abstraction for the core manual queue: counterpar
 - `test/drw/domain/core_queue_test.clj` covers two-tenant isolation, duplicate source refs, illegal dispute transitions, terminal attach rejection, timeline rows, and audit rows.
 - `test/drw/domain/correlator_test.clj` covers strong-signal scoring, business-signal review candidates, weak candidate filtering, cross-tenant collision rejection, and stable tie ordering.
 - `test/drw/domain/ingestion_pipeline_test.clj` covers unmatched dispute creation, duplicate source-ref rejection before correlation side effects, pending candidates, opt-in auto-merge, and cross-tenant correlation rejection.
+- `test/drw/domain/ingestion_sources_test.clj` covers default source materialization, tenant isolation, settings saves, disabled/failure pull-now results, cursor updates, source refs, and run filters.
 - Correlation review behavior is covered through `test/drw/api/workbench_handlers_test.clj` and real HTTP E2E tests: pending list/detail, cross-tenant 404, accept attach side effects, duplicate terminal rejection, and reject-without-attach.
 - `test/drw/domain/reports_test.clj` covers tenant-scoped dispute audit PDF-source rendering, cross-tenant fail-closed behavior, and tenant identity leakage checks.
 - `test/drw/domain/sla_test.clj` covers overdue SLA breach side effects, idempotency, terminal dispute exclusion, and disabled Hub behavior.

@@ -6,6 +6,7 @@
 
 | File | Summary |
 |------|---------|
+| `001-operator-pull-now-reuses-scheduled-job.md` | Operator-triggered ingestion should call the same job path as scheduled polling and record a tenant-scoped run. |
 | `EXAMPLE.md` | Template showing the expected shape — delete once a real pattern exists. |
 
 ## How to add a new pattern
