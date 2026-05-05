@@ -10,14 +10,14 @@
 | `src-drw-system.md` | Datomic, Postgres, and Redis setup-time system checks. |
 | `src-drw-db.md` | Datomic schema loading, setup summaries, status transition validation, and tenant-scope helpers. |
 | `src-drw-domain.md` | In-memory domain layer for counterparties, disputes, exceptions, reports, timeline, and audit rows. |
-| `src-drw-jobs.md` | Offline jobs for domain maintenance, currently the overdue dispute SLA reaper. |
+| `src-drw-jobs.md` | Offline jobs for SLA reaping, reconciliation polling, and Contract Lifecycle ingestion. |
 | `src-drw-fixtures.md` | Resource-backed tenant fixture loading with identity-field validation. |
 | `src-drw-tenants.md` | Tenant identity snapshot capture for config-driven surfaces. |
 | `src-drw-templates.md` | Strict undefined-token lookup for template rendering. |
 | `src-drw-audit.md` | Tenant-scoped append-only audit transaction construction. |
-| `src-drw-adapters.md` | Shared exception ingestion adapter protocol and disabled-safe fetcher foundation. |
+| `src-drw-adapters.md` | Shared exception ingestion adapter protocol, disabled-safe fetcher, and concrete adapter implementations. |
 | `src-drw-api.md` | JSON tenant lifecycle handlers for registration, profile, and key rotation. |
-| `src-drw-ecosystem.md` | Disabled-by-default Notification Hub and Workflow Engine client stubs. |
+| `src-drw-ecosystem.md` | Disabled-by-default Notification Hub, Workflow Engine, and NATS client boundaries. |
 | `src-drw-http.md` | Pedestal service map, route table, JSON helpers, API interceptors, and UI route wiring. |
 | `src-drw-ui.md` | Hiccup/HTMX/Tailwind login, dashboard, dispute, exception, and counterparty UI. |
 | `src-drw-core-setup.md` | App startup, structured first-run setup checks, Docker, and build entry points. |
