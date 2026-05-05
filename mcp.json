@@ -31,6 +31,78 @@
       "description": "Rotate the authenticated tenant API key.",
       "method": "POST",
       "path": "/api/tenants/rotate-key"
+    },
+    {
+      "name": "list_disputes",
+      "description": "List tenant-scoped disputes with optional queue filters.",
+      "method": "GET",
+      "path": "/api/disputes"
+    },
+    {
+      "name": "create_dispute",
+      "description": "Create a manual dispute for the authenticated tenant.",
+      "method": "POST",
+      "path": "/api/disputes"
+    },
+    {
+      "name": "get_dispute",
+      "description": "Read a dispute with attached exceptions and timeline.",
+      "method": "GET",
+      "path": "/api/disputes/{id}"
+    },
+    {
+      "name": "assign_dispute",
+      "description": "Assign a dispute to a user.",
+      "method": "PATCH",
+      "path": "/api/disputes/{id}/assign"
+    },
+    {
+      "name": "transition_dispute",
+      "description": "Move a dispute through a validated status transition.",
+      "method": "PATCH",
+      "path": "/api/disputes/{id}/transition"
+    },
+    {
+      "name": "comment_on_dispute",
+      "description": "Append a comment timeline row to a dispute.",
+      "method": "POST",
+      "path": "/api/disputes/{id}/comments"
+    },
+    {
+      "name": "attach_exception_to_dispute",
+      "description": "Attach an exception to a dispute.",
+      "method": "POST",
+      "path": "/api/disputes/{id}/attach-exception"
+    },
+    {
+      "name": "list_exceptions",
+      "description": "List tenant-scoped manual exceptions.",
+      "method": "GET",
+      "path": "/api/exceptions"
+    },
+    {
+      "name": "create_exception",
+      "description": "Create a manual exception.",
+      "method": "POST",
+      "path": "/api/exceptions"
+    },
+    {
+      "name": "list_counterparties",
+      "description": "List tenant-scoped counterparties.",
+      "method": "GET",
+      "path": "/api/counterparties"
+    },
+    {
+      "name": "get_counterparty",
+      "description": "Read a counterparty with related disputes.",
+      "method": "GET",
+      "path": "/api/counterparties/{id}"
+    },
+    {
+      "name": "merge_counterparty",
+      "description": "Merge one counterparty into another.",
+      "method": "POST",
+      "path": "/api/counterparties/{id}/merge"
     }
   ]
 }

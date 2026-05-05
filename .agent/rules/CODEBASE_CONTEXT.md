@@ -5,7 +5,7 @@
 > Source PRD: `docs/dispute-resolution-workbench_prd.md`
 
 ## Project Summary
-Single-queue dispute operations system for finance teams. It consolidates manual exceptions plus future feeds from Invoice Reconciliation, Contract Lifecycle, Transaction Reconciliation, and optional Webhook delivery failures into a tenant-scoped workflow with SLA tracking, explicit correlation review, Workflow Engine resolution playbooks, Notification Hub events, and immutable Datomic audit history.
+Tenant-scoped dispute operations system for finance teams, covering manual exceptions, dispute queues, SLA tracking, future ecosystem feeds, Workflow Engine resolutions, Notification Hub events, and immutable Datomic audit history.
 
 ## Tech Stack
 | Layer | Technology |
@@ -51,11 +51,12 @@ Single-queue dispute operations system for finance teams. It consolidates manual
 | `src/drw/setup.clj` | First-run setup smoke command |
 | `src/drw/db/` | Datomic schema loading, status transition validation, and tenant-scoped collection helpers |
 | `src/drw/domain/` | Process-local core domain layer for counterparties, disputes, manual exceptions, timeline rows, and audit rows |
+| `src/drw/jobs/` | Offline jobs, currently the SLA overdue dispute reaper |
 | `src/drw/fixtures.clj` | Resource-backed tenant fixture loader with identity-field validation |
 | `src/drw/tenants/` | Tenant identity snapshot capture for config-driven surfaces |
 | `src/drw/templates/` | Strict template token lookup helpers |
 | `src/drw/audit/` | Append-only audit transaction construction |
-| `src/drw/api/` | JSON API handlers, currently tenant lifecycle endpoints |
+| `src/drw/api/` | JSON API handlers for tenant lifecycle plus dispute, exception, and counterparty queue operations |
 | `src/drw/ecosystem/` | Disabled-by-default Notification Hub and Workflow Engine client stubs |
 | `src/drw/http/` | Pedestal server, routes, JSON helpers, and interceptor chain |
 | `src/drw/ui/` | Hiccup layout and HTMX-ready pages |
@@ -92,12 +93,24 @@ See `.env.example`. Runtime-required keys enforced by `drw.config`: `APP_ENV`, `
 | `GET /api/tenants/me` | `drw.api.tenants/profile-handler` | Authenticated tenant profile lookup |
 | `GET /tenants/me` | `drw.api.tenants/profile-handler` | Compatibility tenant profile lookup |
 | `POST /api/tenants/rotate-key` | `drw.api.tenants/rotate-key-handler` | Authenticated API key rotation |
+| `GET /api/disputes` | `drw.api.disputes/list-handler` | List disputes with queue filters |
+| `POST /api/disputes` | `drw.api.disputes/create-handler` | Create a manual dispute |
+| `GET /api/disputes/:id` | `drw.api.disputes/get-handler` | Fetch dispute detail |
+| `PATCH /api/disputes/:id/assign` | `drw.api.disputes/assign-handler` | Assign a dispute to a user |
+| `PATCH /api/disputes/:id/transition` | `drw.api.disputes/transition-handler` | Apply status transition |
+| `POST /api/disputes/:id/comments` | `drw.api.disputes/comment-handler` | Append timeline comment |
+| `POST /api/disputes/:id/attach-exception` | `drw.api.disputes/attach-exception-handler` | Attach exception |
+| `GET /api/exceptions` | `drw.api.exceptions/list-handler` | List tenant-scoped manual exceptions |
+| `POST /api/exceptions` | `drw.api.exceptions/create-handler` | Create a manual exception |
+| `GET /api/counterparties` | `drw.api.counterparties/list-handler` | List tenant-scoped counterparties |
+| `GET /api/counterparties/:id` | `drw.api.counterparties/get-handler` | Fetch counterparty detail |
+| `POST /api/counterparties/:id/merge` | `drw.api.counterparties/merge-handler` | Merge one counterparty into another |
 
 ## Tenant Model
 API requests use `X-API-Key` prefix lookup and constant-time hash comparison. Public routes are explicit in `drw.http.interceptors.auth/public-routes`. Protected routes require `:current-tenant`, rate limits are applied per route, request ids are propagated through `X-Request-Id`, and tenant lifecycle mutations append audit rows. UI requests will use buddy-auth sessions that resolve to the same tenant context. Cross-tenant misses return 404.
 
 ## Data Contracts
-Tenant fixture data lives in `resources/fixtures/tenants.edn` and must keep at least two tenants with distinct identity literals. Tenant snapshot generation uses `drw.db.scope/entity-by-tenant-id` and fails closed on missing tenant identity fields. Template lookup uses strict undefined behavior through `drw.templates.strict-fetch`; missing tokens throw instead of rendering empty strings. Audit rows are append-only insert maps built by `drw.audit.recorder`. Batch 005 domain functions use process-local atoms in `drw.domain.state` for counterparties, disputes, manual exceptions, timeline entries, and audit rows until durable Datomic mutation wiring is introduced.
+Tenant fixture data lives in `resources/fixtures/tenants.edn` and must keep at least two tenants with distinct identity literals. Tenant snapshot generation uses `drw.db.scope/entity-by-tenant-id` and fails closed on missing tenant identity fields. Template lookup uses strict undefined behavior through `drw.templates.strict-fetch`; missing tokens throw instead of rendering empty strings. Audit rows are append-only insert maps built by `drw.audit.recorder`. Current domain functions use process-local atoms in `drw.domain.state` for counterparties, disputes, manual exceptions, timeline entries, audit rows, and SLA breach claims until durable Datomic mutation wiring is introduced. The SLA reaper scans non-terminal disputes with overdue SLA clocks, appends `:sla-breached` timeline/audit rows once per `[dispute-id due-at]`, and emits `dispute.sla_breached` through the Notification Hub client helper.
 
 ## Deep References
 | Area | Planned path |
@@ -107,6 +120,7 @@ Tenant fixture data lives in `resources/fixtures/tenants.edn` and must keep at l
 | System checks | `.agent/knowledge/modules/src-drw-system.md` |
 | Datomic schema and tenant scope | `.agent/knowledge/modules/src-drw-db.md` |
 | Core domain queue | `.agent/knowledge/modules/src-drw-domain.md` |
+| Offline jobs | `.agent/knowledge/modules/src-drw-jobs.md` |
 | Tenant fixtures | `.agent/knowledge/modules/src-drw-fixtures.md` |
 | Tenant snapshots | `.agent/knowledge/modules/src-drw-tenants.md` |
 | Strict template lookup | `.agent/knowledge/modules/src-drw-templates.md` |

@@ -10,10 +10,10 @@ CFOs, Heads of Finance Operations, supervisors, and operations analysts at B2B S
 - Server-rendered Hiccup + HTMX UI with Tailwind CSS.
 - API-key authentication resolves protected requests to a mandatory current tenant; session auth is planned for the UI surface.
 - External adapters are optional; manual disputes are the baseline product.
-- Current data contract includes `resources/datomic/schema.edn`, `resources/fixtures/tenants.edn`, tenant-scope helpers, tenant snapshots, strict template lookup, append-only audit transaction construction, in-memory tenant API-key store, disabled-by-default ecosystem client stubs, and process-local domain stores for counterparties, disputes, manual exceptions, timeline, and audit rows.
+- Current data contract includes `resources/datomic/schema.edn`, `resources/fixtures/tenants.edn`, tenant-scope helpers, tenant snapshots, strict template lookup, append-only audit transaction construction, in-memory tenant API-key store, disabled-by-default ecosystem client stubs, process-local domain stores for counterparties, disputes, manual exceptions, timeline, audit rows, and idempotent SLA breach claims.
 
 ## API Surface
-Current wired routes are `GET /api/health` for JSON liveness, `GET /` for the server-rendered HTMX shell, `POST /api/tenants/register` for self-registration, `GET /api/tenants/me` and `GET /tenants/me` for tenant profile lookup, and `POST /api/tenants/rotate-key` for API-key rotation. The broader dispute, exception, correlation, SLA, audit, and integration APIs are planned by the PRD but not wired yet.
+Current wired routes are `GET /api/health` for JSON liveness, `GET /` for the server-rendered HTMX shell, tenant lifecycle endpoints, dispute queue endpoints, manual exception endpoints, and counterparty list/get/merge endpoints. Correlation, resolution playbook, audit report, and external ingestion APIs remain planned by the PRD but are not wired yet.
 
 ## Integrations
 Consumes from Invoice Reconciliation, Contract Lifecycle, Transaction Reconciliation, and optional Webhook Ingestion Engine. Emits to Notification Hub and triggers Workflow Automation Engine.

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Owns the in-memory domain data abstraction for the core manual queue: counterparties, disputes, exceptions, timeline rows, audit rows, and per-tenant dispute references.
+Owns the in-memory domain data abstraction for the core manual queue: counterparties, disputes, exceptions, timeline rows, audit rows, per-tenant dispute references, and SLA breach claims.
 
 ## Key files
 
@@ -10,15 +10,17 @@ Owns the in-memory domain data abstraction for the core manual queue: counterpar
 - `src/drw/domain/counterparties.clj` - counterparty CRUD, normalized-name matching, and source external-ref resolution.
 - `src/drw/domain/disputes.clj` - dispute creation, assignment, status transitions, comments, exception attach side effects, and tenant-scoped readers.
 - `src/drw/domain/exceptions.clj` - manual exception creation, duplicate source-ref prevention, tenant-scoped listing, and attach flow.
+- `src/drw/domain/sla.clj` - overdue SLA detection, idempotent breach claiming, audit/timeline rows, and Notification Hub event emission helper.
 
 ## Dependencies
 
 - Upstream: `drw.db.scope`, `drw.db.schema`, `drw.audit.recorder`.
-- Downstream: future API, UI, SLA, ingestion, and resolution modules should call this domain layer instead of mutating atoms directly.
+- Downstream: API handlers, offline jobs, future UI, ingestion, and resolution modules should call this domain layer instead of mutating atoms directly.
 
 ## Tests
 
 - `test/drw/domain/core_queue_test.clj` covers two-tenant isolation, duplicate source refs, illegal dispute transitions, terminal attach rejection, timeline rows, and audit rows.
+- `test/drw/domain/sla_test.clj` covers overdue SLA breach side effects, idempotency, terminal dispute exclusion, and disabled Hub behavior.
 
 ## Cross-references
 
