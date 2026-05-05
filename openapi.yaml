@@ -111,7 +111,245 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           description: Tenant not found
+  /api/disputes:
+    get:
+      summary: List tenant-scoped disputes
+      operationId: listDisputes
+      security:
+        - ApiKeyAuth: []
+      responses:
+        "200":
+          description: Dispute page
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  disputes:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Dispute"
+                  nextCursor:
+                    type:
+                      - string
+                      - "null"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      summary: Create a manual dispute
+      operationId: createDispute
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DisputeCreate"
+      responses:
+        "201":
+          description: Created dispute
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dispute:
+                    $ref: "#/components/schemas/Dispute"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+  /api/disputes/{id}:
+    get:
+      summary: Read a dispute with exceptions and timeline
+      operationId: getDispute
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Dispute detail
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: Dispute not found
+  /api/disputes/{id}/assign:
+    patch:
+      summary: Assign a dispute
+      operationId: assignDispute
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - user_id
+              properties:
+                user_id:
+                  type: string
+                  format: uuid
+      responses:
+        "200":
+          description: Assigned dispute
+        "422":
+          $ref: "#/components/responses/IllegalStatusTransition"
+  /api/disputes/{id}/transition:
+    patch:
+      summary: Transition a dispute status
+      operationId: transitionDispute
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - to_status
+              properties:
+                to_status:
+                  $ref: "#/components/schemas/DisputeStatus"
+      responses:
+        "200":
+          description: Transitioned dispute
+        "422":
+          $ref: "#/components/responses/IllegalStatusTransition"
+  /api/disputes/{id}/comments:
+    post:
+      summary: Append a dispute comment
+      operationId: commentOnDispute
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - body
+              properties:
+                body:
+                  type: string
+      responses:
+        "201":
+          description: Timeline entry created
+  /api/disputes/{id}/attach-exception:
+    post:
+      summary: Attach an exception to a dispute
+      operationId: attachExceptionToDispute
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - exception_id
+              properties:
+                exception_id:
+                  type: string
+                  format: uuid
+      responses:
+        "200":
+          description: Exception attached and dispute updated
+        "422":
+          description: Terminal disputes reject attachment
+  /api/exceptions:
+    get:
+      summary: List tenant-scoped exceptions
+      operationId: listExceptions
+      security:
+        - ApiKeyAuth: []
+      responses:
+        "200":
+          description: Exception page
+    post:
+      summary: Create a manual exception
+      operationId: createException
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExceptionCreate"
+      responses:
+        "201":
+          description: Exception created
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "409":
+          description: Duplicate source reference
+  /api/counterparties:
+    get:
+      summary: List tenant-scoped counterparties
+      operationId: listCounterparties
+      security:
+        - ApiKeyAuth: []
+      responses:
+        "200":
+          description: Counterparty page
+  /api/counterparties/{id}:
+    get:
+      summary: Read a counterparty and dispute history
+      operationId: getCounterparty
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Counterparty detail
+        "404":
+          description: Counterparty not found
+  /api/counterparties/{id}/merge:
+    post:
+      summary: Merge one counterparty into another
+      operationId: mergeCounterparty
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - merge_into_id
+              properties:
+                merge_into_id:
+                  type: string
+                  format: uuid
+      responses:
+        "200":
+          description: Merge target counterparty
 components:
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
   securitySchemes:
     ApiKeyAuth:
       type: apiKey
@@ -130,7 +368,112 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/ErrorResponse"
+    IllegalStatusTransition:
+      description: Illegal dispute status transition
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
   schemas:
+    DisputeStatus:
+      type: string
+      enum:
+        - open
+        - assigned
+        - investigating
+        - awaiting_counterparty
+        - awaiting_approval
+        - resolving
+        - resolved
+        - withdrawn
+    DisputeCreate:
+      type: object
+      required:
+        - title
+        - description
+        - category
+        - severity
+        - currency
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        severity:
+          type: string
+        currency:
+          type: string
+        counterparty_id:
+          type: string
+          format: uuid
+    Dispute:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        reference:
+          type: string
+        title:
+          type: string
+        status:
+          $ref: "#/components/schemas/DisputeStatus"
+        monetaryImpactCents:
+          type: integer
+        currency:
+          type: string
+        slaDueAt:
+          type:
+            - string
+            - "null"
+    ExceptionCreate:
+      type: object
+      required:
+        - source_ref
+        - kind
+        - currency
+        - observed_at
+      properties:
+        source_ref:
+          type: string
+        source_system:
+          type: string
+          default: manual
+        kind:
+          type: string
+        currency:
+          type: string
+        observed_at:
+          type: string
+          format: date-time
+        monetary_impact_cents:
+          type: integer
+    Exception:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        sourceRef:
+          type: string
+        sourceSystem:
+          type: string
+        disputeId:
+          type:
+            - string
+            - "null"
+    Counterparty:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        canonicalName:
+          type: string
+        kind:
+          type: string
     TenantRegistration:
       type: object
       required:

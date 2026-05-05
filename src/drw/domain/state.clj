@@ -7,6 +7,7 @@
 (defonce timeline* (atom []))
 (defonce audit-log* (atom []))
 (defonce reference-sequences* (atom {}))
+(defonce sla-breaches* (atom #{}))
 
 (defn reset-store! []
   (reset! counterparties* {})
@@ -14,7 +15,8 @@
   (reset! exceptions* {})
   (reset! timeline* [])
   (reset! audit-log* [])
-  (reset! reference-sequences* {}))
+  (reset! reference-sequences* {})
+  (reset! sla-breaches* #{}))
 
 (defn append-audit! [event]
   (let [tx (recorder/audit-tx event)]
