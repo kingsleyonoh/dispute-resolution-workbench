@@ -28,6 +28,10 @@
                     :observed_at #inst "2026-05-05T10:00:00.000-00:00"}]
    :next_cursor "cursor-2"})
 
+(def duplicate-invoice-body
+  (assoc invoice-body
+         :discrepancies (repeat 2 (first (:discrepancies invoice-body)))))
+
 (def transaction-body
   {:discrepancies [{:discrepancy_id "TRX-100"
                     :counterparty_name "Globex LLC"
@@ -121,6 +125,36 @@
     (is (empty? (exceptions/list-by-tenant tenant-a)))
     (is (empty? (exceptions/list-by-tenant tenant-b)))))
 
+(deftest upstream-failures-are-isolated-from-other-tenants-and-sources
+  (reset-domain!)
+  (let [invoice-success (invoice-poll/run-once!
+                         invoice-cfg
+                         {:tenant-id tenant-a
+                          :http-send-fn (fn [_] {:status 200 :body invoice-body})})
+        transaction-failure (transaction-poll/run-once!
+                             transaction-cfg
+                             {:tenant-id tenant-a
+                              :cursor "trx-cursor-1"
+                              :http-send-fn (fn [_] {:status 503 :body "busy"})
+                              :max-attempts 1})
+        other-tenant-success (invoice-poll/run-once!
+                              invoice-cfg
+                              {:tenant-id tenant-b
+                               :http-send-fn
+                               (fn [_] {:status 200 :body invoice-body})})]
+    (is (= :succeeded (:status invoice-success)))
+    (is (= :failed (:status transaction-failure)))
+    (is (= :succeeded (:status other-tenant-success)))
+    (is (= 1 (count (exceptions/list-by-tenant
+                     tenant-a
+                     {:source-system :invoice-recon}))))
+    (is (empty? (exceptions/list-by-tenant
+                 tenant-a
+                 {:source-system :transaction-recon})))
+    (is (= 1 (count (exceptions/list-by-tenant
+                     tenant-b
+                     {:source-system :invoice-recon}))))))
+
 (deftest duplicate-source-refs-are-skipped-per-tenant
   (reset-domain!)
   (let [send-fn (fn [_] {:status 200 :body invoice-body})
@@ -141,3 +175,46 @@
                                                {:source-system :invoice-recon}))))
     (is (= 1 (count (exceptions/list-by-tenant tenant-b
                                                {:source-system :invoice-recon}))))))
+
+(deftest duplicate-source-refs-in-a-single-poll-do-not-create-extra-side-effects
+  (reset-domain!)
+  (let [run (invoice-poll/run-once!
+             invoice-cfg
+             {:tenant-id tenant-a
+              :http-send-fn
+              (fn [_] {:status 200 :body duplicate-invoice-body})})
+        stored (exceptions/list-by-tenant tenant-a
+                                          {:source-system :invoice-recon})]
+    (is (= :succeeded (:status run)))
+    (is (= 2 (:exceptions-attempted run)))
+    (is (= 1 (:exceptions-stored run)))
+    (is (= 1 (:exceptions-skipped run)))
+    (is (= 1 (count stored)))
+    (is (= 1 (count (filter #(= "exception.created" (:audit/action %))
+                            (state/audit-log)))))
+    (is (empty? (exceptions/list-correlations tenant-a)))))
+
+(deftest same-source-ref-is-deduped-by-source-system-not-globally
+  (reset-domain!)
+  (let [invoice-send (fn [_] {:status 200 :body invoice-body})
+        transaction-send (fn [_] {:status 200
+                                  :body (assoc transaction-body
+                                               :discrepancies
+                                               [{:discrepancy_id "INV-100"
+                                                 :counterparty_name "Globex LLC"
+                                                 :amount_cents -5000
+                                                 :currency "USD"
+                                                 :observed_at
+                                                 #inst "2026-05-05T11:00:00.000-00:00"}])})
+        invoice (invoice-poll/run-once!
+                 invoice-cfg
+                 {:tenant-id tenant-a :http-send-fn invoice-send})
+        transaction (transaction-poll/run-once!
+                     transaction-cfg
+                     {:tenant-id tenant-a :http-send-fn transaction-send})]
+    (is (= 1 (:exceptions-stored invoice)))
+    (is (= 1 (:exceptions-stored transaction)))
+    (is (= 2 (count (exceptions/list-by-tenant tenant-a))))
+    (is (= #{:invoice-recon :transaction-recon}
+           (set (map :exception/source-system
+                     (exceptions/list-by-tenant tenant-a)))))))

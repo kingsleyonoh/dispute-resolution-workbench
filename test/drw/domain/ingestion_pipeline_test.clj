@@ -42,6 +42,10 @@
    :currency "EUR"
    :observed-at now})
 
+(defn- invoice-exception-with-ref [tenant-id source-ref counterparty-id]
+  (assoc (invoice-exception tenant-id source-ref counterparty-id)
+         :entity-id source-ref))
+
 (defn- dispute! [tenant-id counterparty-id]
   (disputes/create-dispute!
    {:tenant-id tenant-id
@@ -97,13 +101,41 @@
 (deftest duplicate-source-refs-reject-before-correlation-side-effects
   (reset-domain!)
   (let [vendor (vendor! tenant-a "Duplicate Vendor")
-        attrs (invoice-exception tenant-a "INV-DUP" (:counterparty/id vendor))]
+        attrs (invoice-exception tenant-a "INV-DUP" (:counterparty/id vendor))
+        audit-before (count (state/audit-log))]
     (exceptions/ingest! attrs actor)
-    (is (= :exception/duplicate-source-ref
-           (ex-type #(exceptions/ingest! attrs actor))))
+    (let [audit-after-first (count (state/audit-log))]
+      (is (= :exception/duplicate-source-ref
+             (ex-type #(exceptions/ingest! attrs actor))))
+      (is (= audit-after-first (count (state/audit-log)))))
+    (is (< audit-before (count (state/audit-log))))
     (is (= 1 (count (exceptions/list-by-tenant tenant-a))))
     (is (= 1 (count (disputes/list-by-tenant tenant-a))))
     (is (empty? (exceptions/list-correlations tenant-a)))))
+
+(deftest duplicate-source-refs-are-isolated-by-tenant-and-source-system
+  (reset-domain!)
+  (let [vendor-a (vendor! tenant-a "Source Scope Vendor A")
+        vendor-b (vendor! tenant-b "Source Scope Vendor B")
+        invoice (invoice-exception tenant-a "SHARED-REF" (:counterparty/id vendor-a))
+        transaction (assoc invoice
+                           :source-system :transaction-recon
+                           :kind :payment-mismatch)
+        other-tenant (invoice-exception tenant-b
+                                        "SHARED-REF"
+                                        (:counterparty/id vendor-b))]
+    (exceptions/ingest! invoice actor)
+    (exceptions/ingest! transaction actor)
+    (exceptions/ingest! other-tenant actor)
+    (is (= 2 (count (exceptions/list-by-tenant tenant-a))))
+    (is (= 1 (count (exceptions/list-by-tenant tenant-b))))
+    (is (= #{"SHARED-REF"}
+           (set (map :exception/source-ref
+                     (concat (exceptions/list-by-tenant tenant-a)
+                             (exceptions/list-by-tenant tenant-b))))))
+    (is (= #{:invoice-recon :transaction-recon}
+           (set (map :exception/source-system
+                     (exceptions/list-by-tenant tenant-a)))))))
 
 (deftest correlated-ingestion-creates-pending-candidate-without-new-dispute
   (reset-domain!)
@@ -164,3 +196,30 @@
       (is (= 1 (count (disputes/list-by-tenant tenant-a))))
       (is (= 1 (count (disputes/list-by-tenant tenant-b))))
       (is (empty? (exceptions/list-correlations tenant-a))))))
+
+(deftest cross-tenant-source-ref-and-entity-overlaps-never-attach-to-other-tenant
+  (reset-domain!)
+  (let [vendor-a (vendor! tenant-a "Collision Vendor")
+        vendor-b (vendor! tenant-b "Collision Vendor")
+        existing-b (dispute! tenant-b (:counterparty/id vendor-b))]
+    (attached-source! tenant-b (:dispute/id existing-b) (:counterparty/id vendor-b))
+    (let [tenant-b-exceptions-before (count (exceptions/list-by-tenant tenant-b))
+          tenant-b-audit-before (count (filter #(= tenant-b (:audit/tenant-id %))
+                                               (state/audit-log)))
+          result (exceptions/ingest!
+                  (invoice-exception-with-ref tenant-a
+                                              "INV-ATTACHED"
+                                              (:counterparty/id vendor-a))
+                  actor)
+          b-dispute (disputes/get-by-id tenant-b (:dispute/id existing-b))]
+      (is (= :dispute-created (:status result)))
+      (is (= tenant-a (:exception/tenant-id (:exception result))))
+      (is (not= (:dispute/id existing-b) (:exception/dispute-id (:exception result))))
+      (is (empty? (exceptions/list-correlations tenant-a)))
+      (is (= tenant-b-exceptions-before
+             (count (exceptions/list-by-tenant tenant-b))))
+      (is (= tenant-b-audit-before
+             (count (filter #(= tenant-b (:audit/tenant-id %))
+                            (state/audit-log)))))
+      (is (= (:dispute/id existing-b) (:dispute/id b-dispute)))
+      (is (= tenant-b (:dispute/tenant-id b-dispute))))))
