@@ -6,10 +6,11 @@ Dispute Resolution Workbench is a Clojure/Pedestal operations console for financ
 CFOs, Heads of Finance Operations, supervisors, and operations analysts at B2B SaaS or manufacturing companies with multiple financial systems.
 
 ## Architecture
-- Clojure 1.12, Pedestal 0.7, Datomic Pro, PostgreSQL 16, Redis 7.
+- Clojure 1.12, Pedestal 0.7, Datomic Local smoke checks, Datomic Pro/PostgreSQL 16 storage config, Redis 7.
 - Server-rendered Hiccup + HTMX UI with Tailwind CSS.
 - API key and session authentication both resolve to a mandatory current tenant.
 - External adapters are optional; manual disputes are the baseline product.
+- Current data contract includes `resources/datomic/schema.edn`, `resources/fixtures/tenants.edn`, tenant-scope helpers, tenant snapshots, strict template lookup, and append-only audit transaction construction.
 
 ## API Surface
 Current wired routes are `GET /api/health` for JSON liveness and `GET /` for the server-rendered HTMX shell. The broader tenant, dispute, exception, correlation, SLA, audit, and integration APIs are planned by the PRD but not wired yet.

@@ -8,6 +8,11 @@
 |------|---------|
 | `src-drw-config.md` | Runtime config loading from env data or `.env` files. |
 | `src-drw-system.md` | Datomic, Postgres, and Redis setup-time system checks. |
+| `src-drw-db.md` | Datomic schema loading, status transition validation, and tenant-scope helpers. |
+| `src-drw-fixtures.md` | Resource-backed tenant fixture loading with identity-field validation. |
+| `src-drw-tenants.md` | Tenant identity snapshot capture for config-driven surfaces. |
+| `src-drw-templates.md` | Strict undefined-token lookup for template rendering. |
+| `src-drw-audit.md` | Tenant-scoped append-only audit transaction construction. |
 | `src-drw-http.md` | Pedestal service map, route table, and initial handlers. |
 | `src-drw-ui.md` | Hiccup/HTMX/Tailwind UI shell and root page. |
 | `src-drw-core-setup.md` | App startup, setup smoke command, Docker, and build entry points. |

@@ -12,7 +12,7 @@ Single-queue dispute operations system for finance teams. It consolidates except
 |---|---|
 | Language | Clojure 1.12 |
 | Framework | Pedestal 0.7.2 |
-| Database | Datomic Local for setup smoke checks; Datomic Pro SQL storage config for PostgreSQL 16 |
+| Database | Datomic Local for setup smoke checks; Datomic Pro SQL storage config for PostgreSQL 16; resource-backed Datomic Section 4 schema |
 | Cache / Queue | Redis 7 with Carmine |
 | SQL access | next.jdbc |
 | UI | Hiccup 2, HTMX 2.0.4, Tailwind CSS 3.4 |
@@ -49,16 +49,22 @@ Single-queue dispute operations system for finance teams. It consolidates except
 | `src/drw/config.clj` | Environment and `.env` config loading |
 | `src/drw/system.clj` | Datomic Local, Datomic SQL storage, Postgres, and Redis smoke helpers |
 | `src/drw/setup.clj` | First-run setup smoke command |
+| `src/drw/db/` | Datomic schema loading, status transition validation, and tenant-scoped collection helpers |
+| `src/drw/fixtures.clj` | Resource-backed tenant fixture loader with identity-field validation |
+| `src/drw/tenants/` | Tenant identity snapshot capture for config-driven surfaces |
+| `src/drw/templates/` | Strict template token lookup helpers |
+| `src/drw/audit/` | Append-only audit transaction construction |
 | `src/drw/http/` | Pedestal server, routes, and handlers |
 | `src/drw/ui/` | Hiccup layout and HTMX-ready pages |
 | `resources/assets/styles/app.css` | Tailwind input stylesheet |
 | `resources/public/assets/app.css` | Generated Tailwind output served by Pedestal |
-| `resources/datomic/` | Datomic Local notes and SQL transactor properties |
+| `resources/datomic/` | Datomic Local notes, SQL transactor properties, and Section 4 schema EDN |
+| `resources/fixtures/` | Seed-quality tenant identity fixtures used by tests and snapshot helpers |
 | `test/drw/` | Unit, integration, system, UI, route, and E2E tests |
 | `.agent/knowledge/modules/` | One file per source module |
 
 ## Database Overview
-Datomic attribute-centric schema for tenants, users, counterparties, disputes, exceptions, correlation candidates, timeline entries, SLA policies, playbooks, ingestion sources/runs, audit log, and report artifacts is still planned. Batch 002 added Datomic Local smoke-client setup and Datomic Pro SQL storage properties, but no Datomic schema file exists yet.
+`resources/datomic/schema.edn` defines Section 4 Datomic attributes for tenants, users, counterparties, disputes, exceptions, correlation candidates, timeline entries, SLA policies, playbooks, ingestion sources/runs, audit log rows, and report artifacts. `drw.db.schema` loads the resource, separates tx-function specs, and validates dispute, correlation, and report status transitions as pure Clojure until executable Datomic Pro tx-function installation is wired.
 
 ## Environment Variables
 See `.env.example`. Runtime-required keys enforced by `drw.config`: `APP_ENV`, `PORT`, `DATABASE_URL`, `DATOMIC_URI`, `REDIS_URL`, `SESSION_SECRET`. Setup also reads `DATABASE_POOL`, `DATOMIC_STORAGE_DIR`, and `DATOMIC_SQL_TRANSACTOR_PROPERTIES`. Ecosystem integrations are feature-flagged with `*_ENABLED=false` defaults.
@@ -83,12 +89,20 @@ See `.env.example`. Runtime-required keys enforced by `drw.config`: `APP_ENV`, `
 ## Tenant Model
 API requests use `X-API-Key` prefix lookup and constant-time hash comparison. UI requests use buddy-auth sessions that resolve to the same tenant context. Every mutation records tenant-scoped audit data, and cross-tenant misses return 404.
 
+## Data Contracts
+Tenant fixture data lives in `resources/fixtures/tenants.edn` and must keep at least two tenants with distinct identity literals. Tenant snapshot generation uses `drw.db.scope/entity-by-tenant-id` and fails closed on missing tenant identity fields. Template lookup uses strict undefined behavior through `drw.templates.strict-fetch`; missing tokens throw instead of rendering empty strings. Audit rows are append-only insert maps built by `drw.audit.recorder`.
+
 ## Deep References
 | Area | Planned path |
 |---|---|
 | Runtime entry points | `.agent/knowledge/modules/src-drw-core-setup.md` |
 | Config loading | `.agent/knowledge/modules/src-drw-config.md` |
 | System checks | `.agent/knowledge/modules/src-drw-system.md` |
+| Datomic schema and tenant scope | `.agent/knowledge/modules/src-drw-db.md` |
+| Tenant fixtures | `.agent/knowledge/modules/src-drw-fixtures.md` |
+| Tenant snapshots | `.agent/knowledge/modules/src-drw-tenants.md` |
+| Strict template lookup | `.agent/knowledge/modules/src-drw-templates.md` |
+| Audit recorder | `.agent/knowledge/modules/src-drw-audit.md` |
 | HTTP server and routes | `.agent/knowledge/modules/src-drw-http.md` |
 | UI shell | `.agent/knowledge/modules/src-drw-ui.md` |
 | Shared foundation primitives | `.agent/knowledge/foundation/` |

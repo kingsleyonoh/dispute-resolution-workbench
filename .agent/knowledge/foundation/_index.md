@@ -8,6 +8,11 @@
 |------|---------|
 | `core-config-loading.md` | Runtime config is loaded and normalized at the boundary before startup consumers use it. |
 | `runtime-system-checks.md` | Setup checks validate Datomic, SQL storage, Postgres, and Redis assumptions from normalized config. |
+| `db-datomic-schema.md` | Datomic schema lives in a production resource with pure status-transition validators. |
+| `tenant-fixtures.md` | Tenant fixtures are resource-backed and must include two distinct identity sets. |
+| `tenant-scope-and-snapshot.md` | Tenant lookups fail closed and tenant snapshots freeze identity for config-driven surfaces. |
+| `template-strict-fetch.md` | Template token lookup throws on missing values instead of rendering empty strings. |
+| `audit-append-only.md` | Audit transactions are tenant-scoped insert-only records. |
 | `http-server-skeleton.md` | Pedestal starts from a route table that must stay aligned with OpenAPI and E2E coverage. |
 | `ui-htmx-shell.md` | Server-rendered Hiccup pages use the shared HTMX shell and generated Tailwind asset path. |
 | `EXAMPLE.md` | Template showing the expected shape — delete once a real foundation primitive exists. |
