@@ -8,8 +8,8 @@
 |------|---------|
 | `src-drw-config.md` | Runtime config loading from env data or `.env` files. |
 | `src-drw-system.md` | Datomic, Postgres, and Redis setup-time system checks. |
-| `src-drw-db.md` | Datomic schema loading, status transition validation, and tenant-scope helpers. |
-| `src-drw-domain.md` | In-memory domain layer for counterparties, disputes, exceptions, timeline, and audit rows. |
+| `src-drw-db.md` | Datomic schema loading, setup summaries, status transition validation, and tenant-scope helpers. |
+| `src-drw-domain.md` | In-memory domain layer for counterparties, disputes, exceptions, reports, timeline, and audit rows. |
 | `src-drw-jobs.md` | Offline jobs for domain maintenance, currently the overdue dispute SLA reaper. |
 | `src-drw-fixtures.md` | Resource-backed tenant fixture loading with identity-field validation. |
 | `src-drw-tenants.md` | Tenant identity snapshot capture for config-driven surfaces. |
@@ -19,7 +19,7 @@
 | `src-drw-ecosystem.md` | Disabled-by-default Notification Hub and Workflow Engine client stubs. |
 | `src-drw-http.md` | Pedestal service map, route table, JSON helpers, API interceptors, and UI route wiring. |
 | `src-drw-ui.md` | Hiccup/HTMX/Tailwind login, dashboard, dispute, exception, and counterparty UI. |
-| `src-drw-core-setup.md` | App startup, setup smoke command, Docker, and build entry points. |
+| `src-drw-core-setup.md` | App startup, structured first-run setup checks, Docker, and build entry points. |
 | `EXAMPLE.md` | Template showing the expected shape — delete once a real module exists. |
 
 ## How to add a new module

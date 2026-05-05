@@ -48,9 +48,9 @@ Tenant-scoped dispute operations system for finance teams, covering manual excep
 | `src/drw/core.clj` | Application entry point |
 | `src/drw/config.clj` | Environment and `.env` config loading |
 | `src/drw/system.clj` | Datomic Local, Datomic SQL storage, Postgres, and Redis smoke helpers |
-| `src/drw/setup.clj` | First-run setup smoke command |
-| `src/drw/db/` | Datomic schema loading, status transition validation, and tenant-scoped collection helpers |
-| `src/drw/domain/` | Process-local core domain layer for counterparties, disputes, manual exceptions, timeline rows, and audit rows |
+| `src/drw/setup.clj` | Structured first-run setup checks and setup CLI |
+| `src/drw/db/` | Datomic schema loading, status transition validation, setup summaries, and tenant-scoped collection helpers |
+| `src/drw/domain/` | Process-local core domain layer for counterparties, disputes, manual exceptions, reports, timeline rows, and audit rows |
 | `src/drw/jobs/` | Offline jobs, currently the SLA overdue dispute reaper |
 | `src/drw/fixtures.clj` | Resource-backed tenant fixture loader with identity-field validation |
 | `src/drw/tenants/` | Tenant identity snapshot capture for config-driven surfaces |
@@ -64,11 +64,12 @@ Tenant-scoped dispute operations system for finance teams, covering manual excep
 | `resources/public/assets/app.css` | Generated Tailwind output served by Pedestal |
 | `resources/datomic/` | Datomic Local notes, SQL transactor properties, and Section 4 schema EDN |
 | `resources/fixtures/` | Seed-quality tenant identity fixtures used by tests and snapshot helpers |
-| `test/drw/` | Unit, integration, system, UI, route, and E2E tests |
+| `test/drw/` | Unit, integration, system, UI, route, setup, domain, and E2E tests |
+| `scripts/first-run-setup.ps1` | PowerShell wrapper around `clojure -M:setup` |
 | `.agent/knowledge/modules/` | One file per source module |
 
 ## Database Overview
-`resources/datomic/schema.edn` defines Section 4 Datomic attributes for tenants, users, counterparties, disputes, exceptions, correlation candidates, timeline entries, SLA policies, playbooks, ingestion sources/runs, audit log rows, and report artifacts. `drw.db.schema` loads the resource, separates tx-function specs, and validates dispute, correlation, and report status transitions as pure Clojure until executable Datomic Pro tx-function installation is wired.
+`resources/datomic/schema.edn` defines Section 4 Datomic attributes for tenants, users, counterparties, disputes, exceptions, correlation candidates, timeline entries, SLA policies, playbooks, ingestion sources/runs, audit log rows, and report artifacts. `drw.db.schema` loads the resource, separates tx-function specs, exposes setup roundtrip/status summaries, and validates dispute, correlation, and report status transitions as pure Clojure until executable Datomic Pro tx-function installation is wired.
 
 ## Environment Variables
 See `.env.example`. Runtime-required keys enforced by `drw.config`: `APP_ENV`, `PORT`, `DATABASE_URL`, `DATOMIC_URI`, `REDIS_URL`, `SESSION_SECRET`. Setup also reads `DATABASE_POOL`, `DATOMIC_STORAGE_DIR`, and `DATOMIC_SQL_TRANSACTOR_PROPERTIES`. Tenant API settings include `SELF_REGISTRATION_ENABLED` and `API_KEY_PREFIX`. Ecosystem client stubs read `NOTIFICATION_HUB_ENABLED`, `NOTIFICATION_HUB_URL`, `NOTIFICATION_HUB_API_KEY`, `WORKFLOW_ENGINE_ENABLED`, `WORKFLOW_ENGINE_URL`, and `WORKFLOW_ENGINE_API_KEY`.
@@ -97,7 +98,7 @@ See `.env.example`. Runtime-required keys enforced by `drw.config`: `APP_ENV`, `
 API requests use `X-API-Key` prefix lookup and constant-time hash comparison. Public routes are explicit in `drw.http.interceptors.auth/public-routes`. Protected API routes require `:current-tenant`, rate limits are applied per route, request ids are propagated through `X-Request-Id`, and tenant lifecycle mutations append audit rows. UI requests resolve the same tenant context from an in-memory `drw_session` cookie, `X-DRW-Session`, or `X-API-Key` fallback before calling domain helpers. Cross-tenant misses return 404.
 
 ## Data Contracts
-Tenant fixture data lives in `resources/fixtures/tenants.edn` and must keep at least two tenants with distinct identity literals. Tenant snapshots use `drw.db.scope/entity-by-tenant-id` and fail closed on missing identity fields. Template lookup uses strict undefined behavior through `drw.templates.strict-fetch`. Audit rows are append-only insert maps built by `drw.audit.recorder`. Current domain functions use process-local atoms for counterparties, disputes, manual exceptions, timeline entries, audit rows, and SLA breach claims until durable Datomic mutation wiring is introduced. UI handlers call these domain helpers with the resolved tenant id and actor slug instead of maintaining a parallel UI store. The SLA reaper scans overdue non-terminal disputes, appends `:sla-breached` timeline/audit rows once per `[dispute-id due-at]`, and emits `dispute.sla_breached` through the Notification Hub client helper.
+Tenant fixture data lives in `resources/fixtures/tenants.edn` and must keep at least two tenants with distinct identity literals. Tenant snapshots use `drw.db.scope/entity-by-tenant-id` and fail closed on missing identity fields. Template lookup uses strict undefined behavior through `drw.templates.strict-fetch`. Audit rows are append-only insert maps built by `drw.audit.recorder`. Current domain functions use process-local atoms for counterparties, disputes, manual exceptions, timeline entries, audit rows, and SLA breach claims until durable Datomic mutation wiring is introduced. UI handlers call these domain helpers with the resolved tenant id and actor slug instead of maintaining a parallel UI store. `drw.domain.reports` renders tenant-scoped dispute audit PDF-source HTML and fails closed on cross-tenant dispute ids; full PDF generation remains planned. The SLA reaper scans overdue non-terminal disputes, appends `:sla-breached` timeline/audit rows once per `[dispute-id due-at]`, and emits `dispute.sla_breached` through the Notification Hub client helper.
 
 ## Deep References
 | Area | Planned path |
