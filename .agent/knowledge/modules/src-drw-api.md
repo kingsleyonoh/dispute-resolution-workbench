@@ -19,6 +19,7 @@ Provides thin JSON API handlers that validate requests, call tenant-domain helpe
 - `test/drw/api/hub_exception_ingress_test.clj` - handler coverage for Hub HMAC, tenant slug, validation, duplicate, and success cases.
 - `test/drw/api/playbooks_handlers_test.clj` - handler coverage for tenant-scoped playbook CRUD, duplicate-code validation, and cross-tenant isolation.
 - `test/drw/api/start_resolution_handlers_test.clj` - handler coverage for start-resolution workflow triggering, duplicate start rejection, and playbook tenant isolation.
+- `test/drw/api/hub_event_emissions_test.clj` - handler coverage for dispute created/assigned/status-changed Hub emissions.
 - `test/drw/e2e_api/tenant_endpoints_test.clj` - real HTTP coverage for tenant endpoint behavior.
 - `test/drw/e2e_api/workbench_endpoints_test.clj` - real HTTP coverage for dispute, exception, correlation, ingestion, and counterparty endpoints.
 - `test/drw/e2e_api/hub_exception_ingress_test.clj` - real HTTP coverage for signed Hub exception ingestion.
@@ -33,7 +34,7 @@ Provides thin JSON API handlers that validate requests, call tenant-domain helpe
 ## Tests
 
 - E2E tenant endpoint tests cover registration validation, auth-required profile lookup, and key rotation through the real server.
-- Workbench handler and E2E tests cover tenant isolation, validation errors, duplicate exception/source/playbook refs, illegal transitions, cross-tenant 404s, correlation decisions, ingestion controls, playbook controls, and Hub-routed HMAC ingress.
+- Workbench handler and E2E tests cover tenant isolation, validation errors, duplicate exception/source/playbook refs, illegal transitions, cross-tenant 404s, correlation decisions, ingestion controls, playbook controls, Hub-routed HMAC ingress, and Section 7b dispute mutation event emissions.
 
 ## Cross-references
 
