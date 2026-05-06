@@ -62,7 +62,7 @@ Tenant-scoped finance dispute operations system: exceptions, queues, SLA trackin
 | `src/drw/security/` | Shared security helpers, currently HMAC-SHA256 signature verification for Hub ingress |
 | `src/drw/observability/` | Readiness, metrics, JSON logs, and Sentry boundary |
 | `src/drw/http/` | Pedestal server, JSON helpers, routes, interceptors, and UI/API wiring |
-| `src/drw/ui/` | Hiccup layout, session lookup, forms, handlers, and operator pages including correlation review and ingestion settings |
+| `src/drw/ui/` | Hiccup layout, session lookup, forms, handlers, bounded dashboard, correlation review, and settings |
 | `resources/assets/styles/app.css` | Tailwind input stylesheet |
 | `resources/public/assets/app.css` | Generated Tailwind output served by Pedestal |
 | `resources/datomic/` | Datomic Local notes, SQL transactor properties, and Section 4 schema EDN |

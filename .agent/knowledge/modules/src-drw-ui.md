@@ -2,12 +2,13 @@
 
 ## Purpose
 
-Defines the server-rendered Hiccup/Tailwind operator console: login, dashboard, dispute queue/detail actions, manual exception attachment, counterparty pages, correlation review, ingestion/playbook settings, form parsing, and tenant session lookup.
+Defines the server-rendered Hiccup/Tailwind operator console: login, bounded dashboard preview, dispute queue/detail actions, manual exception attachment, counterparty pages, correlation review, ingestion/playbook settings, form parsing, and tenant session lookup.
 
 ## Key files
 
 - `src/drw/ui/layout.clj` - shared HTML shell, Tailwind stylesheet link, and HTMX script include.
-- `src/drw/ui/pages.clj` - login, dashboard, dispute list/detail, action forms, audit PDF download link, exception attach, counterparty pages, correlation queue page shell, and ingestion settings page shell.
+- `src/drw/ui/pages.clj` - login, dashboard wrapper, dispute list/detail, action forms, audit PDF download link, exception attach, counterparty pages, correlation queue page shell, and ingestion settings page shell.
+- `src/drw/ui/dashboard.clj` - dashboard summary metrics and bounded 50-row open-dispute preview for large tenants.
 - `src/drw/ui/correlations.clj` - pending correlation queue section with accept/reject POST forms.
 - `src/drw/ui/ingestion.clj` - source setting forms, pull-now buttons, and recent ingestion run table.
 - `src/drw/ui/playbooks.clj` - playbook settings page with add/edit/disable forms.
@@ -22,7 +23,7 @@ Defines the server-rendered Hiccup/Tailwind operator console: login, dashboard, 
 - `resources/public/assets/app.css` - generated Tailwind CSS served from Pedestal resources.
 - `tailwind.config.js` - Tailwind content scan config.
 - `test/drw/ui/layout_test.clj` - shell rendering behavior.
-- `test/drw/ui/pages_test.clj` - login, dashboard, dispute action, audit PDF link, exception, counterparty, correlation, and ingestion settings rendering behavior.
+- `test/drw/ui/pages_test.clj` - login, dashboard, 10k dashboard guard, dispute action, audit PDF link, exception, counterparty, correlation, and ingestion settings rendering behavior.
 - `test/drw/ui/playbooks_test.clj` - playbook settings rendering behavior.
 - `test/drw/e2e_api/ui_flow_test.clj` - real HTTP operator flow through login, create, assign, transition, comment, attach exception, counterparty pages, correlation review, and ingestion settings.
 - `test/drw/e2e_api/ui_playbooks_flow_test.clj` - real HTTP Playbooks settings add/disable flow.
@@ -36,7 +37,7 @@ Defines the server-rendered Hiccup/Tailwind operator console: login, dashboard, 
 ## Tests
 
 - `test/drw/ui/layout_test.clj` verifies page-title validation and shell content.
-- `test/drw/ui/pages_test.clj` verifies rendered page surfaces and dispute/counterparty/correlation/ingestion actions.
+- `test/drw/ui/pages_test.clj` verifies rendered page surfaces, bounded 10k dashboard behavior, and dispute/counterparty/correlation/ingestion actions.
 - `test/drw/e2e_api/health_test.clj` verifies root HTML over real HTTP.
 - `test/drw/e2e_api/ui_flow_test.clj` verifies the first tenant operator flow, correlation acceptance, and ingestion settings/pull-now over a running Pedestal server. `ui_playbooks_flow_test.clj` verifies Playbooks settings over real HTTP.
 
@@ -44,6 +45,7 @@ Defines the server-rendered Hiccup/Tailwind operator console: login, dashboard, 
 
 - UI handlers deliberately call the process-local domain helpers directly with the resolved tenant id and actor slug; they do not call JSON API handlers or keep a separate UI store.
 - Authenticated UI requests accept the normal session cookie and an API-key fallback for server-rendered form tests or HTMX-style authenticated requests.
+- The dashboard counts all tenant disputes for metrics but renders only a 50-row open-dispute preview; `/disputes` remains the full queue.
 
 ## Cross-references
 
