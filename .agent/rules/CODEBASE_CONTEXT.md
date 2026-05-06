@@ -1,6 +1,6 @@
 # Dispute Resolution Workbench - Codebase Context
 
-> Last updated: 2026-05-05
+> Last updated: 2026-05-06
 > Template synced: 2026-05-04
 > Source PRD: `docs/dispute-resolution-workbench_prd.md`
 
