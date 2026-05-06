@@ -94,7 +94,7 @@ See `.env.example`. Required keys: `APP_ENV`, `PORT`, `DATABASE_URL`, `DATOMIC_U
 | UI form actions | `POST /login`, `/logout`, dispute actions, start resolution, correlation decisions, ingestion source save/pull-now | Login and operator actions using POST/303 redirects |
 | Health API | `GET /api/health` | JSON liveness check |
 | Tenant API | `/api/tenants/register`, `/api/tenants/me`, `/tenants/me`, `/api/tenants/rotate-key` | Registration, profile, compatibility profile, and key rotation |
-| Workbench API | `/api/{disputes,exceptions,correlations,ingestion-*,counterparties,playbooks}` incl. start-resolution | JSON workbench operations documented in `openapi.yaml` |
+| Workbench API | `/api/{disputes,exceptions,correlations,ingestion-*,counterparties,playbooks}` incl. start-resolution and audit PDF | JSON/PDF workbench operations documented in `openapi.yaml` |
 | Public ingress API | `POST /api/exceptions/from-hub` | Hub-routed exception ingestion using `X-Hub-Signature-256` HMAC and `X-Hub-Tenant-Slug` |
 
 ## Tenant Model

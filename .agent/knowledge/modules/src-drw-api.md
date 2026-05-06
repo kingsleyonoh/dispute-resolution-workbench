@@ -9,7 +9,7 @@ Provides thin JSON API handlers that validate requests, call tenant-domain helpe
 - `src/drw/api/tenants.clj` - tenant self-registration, authenticated profile lookup, and API-key rotation handlers.
 - `src/drw/api/common.clj` - shared API request parsing, actor/current-tenant lookup, response helpers, and domain error mapping.
 - `src/drw/api/serializers.clj` - JSON response shapes for disputes, exceptions, correlations, timeline entries, counterparties, ingestion sources/runs, and playbooks.
-- `src/drw/api/disputes.clj` - dispute list/create/get plus assign, transition, comment, attach-exception, and start-resolution handlers.
+- `src/drw/api/disputes.clj` - dispute list/create/get plus assign, transition, comment, attach-exception, start-resolution, and audit PDF download handlers.
 - `src/drw/api/exceptions.clj` - manual exception list/create handlers plus public HMAC-verified Hub exception ingestion.
 - `src/drw/api/correlations.clj` - correlation candidate list/detail plus accept/reject handlers.
 - `src/drw/api/ingestion.clj` - ingestion source list/save, pull-now, and run-history handlers.
@@ -20,6 +20,7 @@ Provides thin JSON API handlers that validate requests, call tenant-domain helpe
 - `test/drw/api/playbooks_handlers_test.clj` - handler coverage for tenant-scoped playbook CRUD, duplicate-code validation, and cross-tenant isolation.
 - `test/drw/api/start_resolution_handlers_test.clj` - handler coverage for start-resolution workflow triggering, duplicate start rejection, and playbook tenant isolation.
 - `test/drw/api/hub_event_emissions_test.clj` - handler coverage for dispute created/assigned/status-changed Hub emissions.
+- `test/drw/api/audit_pdf_handlers_test.clj` - handler coverage for tenant-scoped audit PDF generation, binary response headers, and cross-tenant 404s.
 - `test/drw/e2e_api/tenant_endpoints_test.clj` - real HTTP coverage for tenant endpoint behavior.
 - `test/drw/e2e_api/workbench_endpoints_test.clj` - real HTTP coverage for dispute, exception, correlation, ingestion, and counterparty endpoints.
 - `test/drw/e2e_api/hub_exception_ingress_test.clj` - real HTTP coverage for signed Hub exception ingestion.

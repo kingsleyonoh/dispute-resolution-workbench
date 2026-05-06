@@ -7,7 +7,7 @@ Provides the Pedestal service map, route table, JSON helpers, API interceptors, 
 ## Key files
 
 - `src/drw/http/server.clj` - Pedestal service-map, server start, and server stop helpers.
-- `src/drw/http/routes.clj` - route table for UI pages/actions, health, tenant lifecycle, dispute, exception, public Hub exception ingress, correlation, ingestion source/run, and counterparty routes.
+- `src/drw/http/routes.clj` - route table for UI pages/actions, health, tenant lifecycle, dispute, audit PDF, exception, public Hub exception ingress, correlation, ingestion source/run, and counterparty routes.
 - `src/drw/http/handlers.clj` - JSON health handler; legacy home helper remains but routes now use `drw.ui.handlers/home`.
 - `src/drw/http/json.clj` - small JSON encoder, response helper, error response helper, and string-body parser.
 - `src/drw/http/interceptors/` - request id, JSON encoding, rate limit, audit, API-key auth, and tenant binding interceptors.
@@ -25,7 +25,7 @@ Provides the Pedestal service map, route table, JSON helpers, API interceptors, 
 
 ## Tests
 
-- Route tests verify wired UI, tenant, workbench, correlation, and ingestion routes plus invalid dev-route flag handling.
+- Route tests verify wired UI, tenant, workbench, audit PDF, correlation, and ingestion routes plus invalid dev-route flag handling.
 - Interceptor tests verify request-id propagation, auth failures, tenant binding, and rate limiting.
 - E2E tests start a real Pedestal server and request health, root, tenant lifecycle, dispute, exception, HMAC Hub ingress, correlation, ingestion, counterparty, and server-rendered UI routes.
 
