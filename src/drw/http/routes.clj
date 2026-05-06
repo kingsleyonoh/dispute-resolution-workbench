@@ -169,4 +169,4 @@
                   (tenant-routes cfg)
                   (workbench-routes cfg)
                   (ingestion-correlation-routes cfg)
-                  (counterparty-routes cfg)))))))
+                  (counterparty-routes cfg))))))
