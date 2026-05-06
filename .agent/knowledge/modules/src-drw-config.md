@@ -2,17 +2,17 @@
 
 ## Purpose
 
-Loads required runtime configuration from the process environment or an explicit `.env` file and normalizes values for startup, setup checks, tenant API settings, ecosystem client toggles, Hub ingress, reconciliation/contract/Webhook adapter settings, and NATS settings.
+Loads required runtime configuration from the process environment or an explicit `.env` file and normalizes values for startup, setup checks, tenant API settings, ecosystem client toggles, Hub ingress, reconciliation/contract/Webhook adapter settings, NATS settings, and local observability.
 
 ## Key files
 
-- `src/drw/config.clj` - config loader, required env validation, integer parsing, `.env` parsing, tenant self-registration/API-key prefix settings, Notification Hub/Workflow Engine toggles, `HUB_INGRESS_SECRET`, Invoice/Transaction Reconciliation settings, Contract Lifecycle settings, Webhook Engine DLQ poll settings, and NATS settings.
+- `src/drw/config.clj` - config loader, required env validation, integer parsing, `.env` parsing, tenant self-registration/API-key prefix settings, Notification Hub/Workflow Engine toggles, `HUB_INGRESS_SECRET`, Invoice/Transaction Reconciliation settings, Contract Lifecycle settings, Webhook Engine DLQ poll settings, NATS settings, and observability keys.
 - `test/drw/config_test.clj` - config parsing and required-env coverage.
 
 ## Dependencies
 
 - Upstream: `clojure.string`.
-- Downstream: `src/drw/core.clj`, `src/drw/setup.clj`, `src/drw/http/routes.clj`, Hub ingress handler, ecosystem clients, reconciliation poll jobs, Contract Lifecycle backfill/NATS jobs, Webhook Engine DLQ poll job, and tests that derive config from `.env.example`.
+- Downstream: `src/drw/core.clj`, `src/drw/setup.clj`, `src/drw/http/routes.clj`, Hub ingress handler, ecosystem clients, reconciliation poll jobs, Contract Lifecycle backfill/NATS jobs, Webhook Engine DLQ poll job, observability handlers, and tests that derive config from `.env.example`.
 
 ## Tests
 

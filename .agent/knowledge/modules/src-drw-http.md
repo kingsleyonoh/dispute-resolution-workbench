@@ -2,13 +2,13 @@
 
 ## Purpose
 
-Provides the Pedestal service map, route table, JSON helpers, API interceptors, health endpoint, tenant/workbench API endpoints, public Hub ingress endpoint, correlation/ingestion endpoints, and server-rendered UI route wiring.
+Provides the Pedestal service map, route table, JSON helpers, API interceptors, liveness/readiness/metrics endpoints, tenant/workbench API endpoints, public Hub ingress endpoint, correlation/ingestion endpoints, and server-rendered UI route wiring.
 
 ## Key files
 
 - `src/drw/http/server.clj` - Pedestal service-map, server start, and server stop helpers.
-- `src/drw/http/routes.clj` - route table for UI pages/actions, health, tenant lifecycle, dispute, audit PDF, exception, public Hub exception ingress, correlation, ingestion source/run, and counterparty routes.
-- `src/drw/http/handlers.clj` - JSON health handler; legacy home helper remains but routes now use `drw.ui.handlers/home`.
+- `src/drw/http/routes.clj` - route table for UI pages/actions, health/readiness/metrics, tenant lifecycle, dispute, audit PDF, exception, public Hub exception ingress, correlation, ingestion source/run, and counterparty routes.
+- `src/drw/http/handlers.clj` - JSON liveness/readiness handlers, Prometheus metrics handler, and legacy home helper.
 - `src/drw/http/json.clj` - small JSON encoder, response helper, error response helper, and string-body parser.
 - `src/drw/http/interceptors/` - request id, JSON encoding, rate limit, audit, API-key auth, and tenant binding interceptors.
 - `test/drw/http/routes_test.clj` - route-table behavior, including UI route names, ingestion routes, and Hub ingress route wiring.
@@ -25,13 +25,14 @@ Provides the Pedestal service map, route table, JSON helpers, API interceptors, 
 
 ## Tests
 
-- Route tests verify wired UI, tenant, workbench, audit PDF, correlation, and ingestion routes plus invalid dev-route flag handling.
+- Route tests verify wired UI, tenant, workbench, audit PDF, correlation, ingestion, readiness, and metrics routes plus invalid dev-route flag handling.
 - Interceptor tests verify request-id propagation, auth failures, tenant binding, and rate limiting.
 - E2E tests start a real Pedestal server and request health, root, tenant lifecycle, dispute, exception, HMAC Hub ingress, correlation, ingestion, counterparty, and server-rendered UI routes.
 
 ## Notes
 
 - `api-chain` applies request id, JSON response encoding, rate limiting, audit, API-key auth, and tenant binding; public routes skip API-key auth before route handlers enforce their own credentials.
+- `metrics-chain` applies request id only; `drw.http.handlers/metrics` enforces optional Basic auth from metrics config instead of tenant API-key auth.
 - `page-chain` applies request id only; UI authentication is handled inside `drw.ui.handlers` so unauthenticated page requests can redirect to `/login`.
 - UI routes are server-rendered HTML routes, not OpenAPI JSON API routes.
 

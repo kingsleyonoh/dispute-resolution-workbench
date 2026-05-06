@@ -19,6 +19,7 @@
 | `src-drw-api.md` | JSON tenant lifecycle, dispute, exception, correlation, ingestion, and counterparty handlers. |
 | `src-drw-ecosystem.md` | Disabled-by-default Notification Hub, Workflow Engine, and NATS client boundaries. |
 | `src-drw-security.md` | HMAC-SHA256 signing and verification helpers for public Hub ingress payloads. |
+| `src-drw-observability.md` | Local readiness, Prometheus-format metrics, Axiom-compatible JSON logs, and injectable Sentry capture boundary. |
 | `src-drw-http.md` | Pedestal service map, route table, JSON helpers, API interceptors, API routes, and UI route wiring. |
 | `src-drw-ui.md` | Hiccup/HTMX/Tailwind login, dashboard, dispute, exception, counterparty, correlation, and ingestion settings UI. |
 | `src-drw-core-setup.md` | App startup, structured first-run setup checks, Docker, and build entry points. |
