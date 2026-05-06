@@ -1,6 +1,7 @@
 (ns drw.domain.resolution
   (:require [clojure.string :as str]
             [drw.domain.disputes :as disputes]
+            [drw.domain.hub-events :as hub-events]
             [drw.domain.state :as state]
             [drw.ecosystem.workflow-client :as workflow])
   (:import [java.util UUID]))
@@ -78,23 +79,27 @@
     :timeline/body body
     :timeline/occurred-at (java.util.Date.)}))
 
-(defn- apply-result! [dispute result actor]
+(defn- apply-result! [cfg dispute result actor]
   (let [tenant-id (:dispute/tenant-id dispute)
         dispute-id (:dispute/id dispute)
         summary (or (:summary result) (:resolution-summary result) "")]
     (case (:status result)
       (:succeeded :completed)
       (do
-        (disputes/transition! tenant-id dispute-id
-                              {:to :resolved :resolution-summary summary}
-                              actor)
+        (let [resolved (disputes/transition!
+                        tenant-id dispute-id
+                        {:to :resolved :resolution-summary summary}
+                        actor)]
+          (hub-events/emit-dispute! cfg "dispute.resolved" resolved))
         (timeline! dispute :workflow-completed summary actor))
       :failed
       (do
-        (disputes/transition! tenant-id dispute-id
-                              {:to :investigating
-                               :resolution-summary summary}
-                              actor)
+        (let [failed (disputes/transition!
+                      tenant-id dispute-id
+                      {:to :investigating
+                       :resolution-summary summary}
+                      actor)]
+          (hub-events/emit-dispute! cfg "dispute.workflow_failed" failed))
         (timeline! dispute :workflow-failed summary actor)))))
 
 (defn poll-active! [cfg actor]
@@ -103,7 +108,7 @@
                (let [execution-id (:dispute/workflow-execution-id dispute)
                      result (workflow/execution-status! cfg execution-id)]
                  (when (terminal-result? result)
-                   (apply-result! dispute result actor))
+                   (apply-result! cfg dispute result actor))
                  {:execution-id execution-id
                   :status (:status result)
                   :dispute-id (:dispute/id dispute)})))))

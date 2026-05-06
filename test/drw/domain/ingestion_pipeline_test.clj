@@ -141,18 +141,25 @@
   (reset-domain!)
   (let [vendor (vendor! tenant-a "Review Vendor")
         existing (dispute! tenant-a (:counterparty/id vendor))
+        sent (atom [])
         result (exceptions/ingest!
                 (dissoc (invoice-exception tenant-a "INV-REVIEW"
                                            (:counterparty/id vendor))
                         :entity-id)
-                actor)]
+                actor
+                {:notification-hub-enabled true
+                 :notification-hub-url "https://notify.example.invalid"
+                 :notification-hub-api-key "example_key"
+                 :notification-hub-send-fn #(swap! sent conj %)})]
     (is (= :correlation-pending (:status result)))
     (is (= (:dispute/id existing)
            (-> result :correlations first :correlation/target-dispute-id)))
     (is (= :pending (-> result :correlations first :correlation/status)))
     (is (nil? (:exception/dispute-id (:exception result))))
     (is (= 1 (count (disputes/list-by-tenant tenant-a))))
-    (is (= 1 (count (exceptions/list-correlations tenant-a))))))
+    (is (= 1 (count (exceptions/list-correlations tenant-a))))
+    (is (= ["dispute.correlation_pending"]
+           (map #(get-in % [:event :event_type]) @sent)))))
 
 (deftest high-confidence-candidates-auto-merge-only-when-enabled
   (reset-domain!)

@@ -5,6 +5,7 @@
             [drw.domain.counterparties :as counterparties]
             [drw.domain.disputes :as disputes]
             [drw.domain.exception-validation :as validation]
+            [drw.domain.hub-events :as hub-events]
             [drw.domain.state :as state])
   (:import [java.time Instant]
            [java.util UUID]))
@@ -203,11 +204,13 @@
          :exception attached
          :correlation correlation})
       :else
-      {:status :correlation-pending
-       :exception exception
-       :correlations (mapv #(create-correlation! tenant-id exception %
-                                                 :pending actor)
-                           candidates)})))
+      (let [correlations (mapv #(create-correlation! tenant-id exception %
+                                                     :pending actor)
+                               candidates)]
+        (hub-events/emit-correlation-pending! cfg tenant-id correlations)
+        {:status :correlation-pending
+         :exception exception
+         :correlations correlations}))))
 
 (defn ingest!
   ([attrs actor] (ingest! attrs actor {}))

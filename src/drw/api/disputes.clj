@@ -3,6 +3,7 @@
             [drw.api.serializers :as serializers]
             [drw.domain.disputes :as disputes]
             [drw.domain.exceptions :as exceptions]
+            [drw.domain.hub-events :as hub-events]
             [drw.domain.playbooks :as playbooks]
             [drw.domain.resolution :as resolution]))
 
@@ -42,7 +43,7 @@
       (api/ok {:disputes (mapv serializers/dispute disputes)
                :nextCursor nil}))))
 
-(defn create-handler [_cfg]
+(defn create-handler [cfg]
   (fn [request]
     (api/with-domain-errors
       (let [tenant-id (api/current-tenant-id request)
@@ -50,6 +51,7 @@
             dispute (disputes/create-dispute!
                      (create-attrs tenant-id body)
                      (api/actor request))]
+        (hub-events/emit-dispute! cfg "dispute.created" dispute)
         (api/created {:dispute (serializers/dispute dispute)})))))
 
 (defn get-handler [_cfg]
@@ -65,7 +67,7 @@
                                  (disputes/list-timeline tenant-id id))})
         (api/not-found "Dispute not found")))))
 
-(defn assign-handler [_cfg]
+(defn assign-handler [cfg]
   (fn [request]
     (api/with-domain-errors
       (let [tenant-id (api/current-tenant-id request)
@@ -75,9 +77,10 @@
                      (dispute-id request)
                      {:user-id (api/uuid-value (api/value body :user_id :userId))}
                      (api/actor request))]
+        (hub-events/emit-dispute! cfg "dispute.assigned" dispute)
         (api/ok {:dispute (serializers/dispute dispute)})))))
 
-(defn transition-handler [_cfg]
+(defn transition-handler [cfg]
   (fn [request]
     (api/with-domain-errors
       (let [tenant-id (api/current-tenant-id request)
@@ -87,6 +90,7 @@
                      (dispute-id request)
                      {:to (api/keyword-value (api/value body :to_status :toStatus))}
                      (api/actor request))]
+        (hub-events/emit-dispute! cfg "dispute.status_changed" dispute)
         (api/ok {:dispute (serializers/dispute dispute)})))))
 
 (defn comment-handler [_cfg]

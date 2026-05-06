@@ -86,16 +86,21 @@
   (reset-domain!)
   (let [completed (dispute!)
         failed (dispute!)
+        sent (atom [])
         cfg {:workflow-engine-enabled true
              :workflow-engine-url "https://workflows.example.invalid"
              :workflow-engine-api-key "example_key"
+             :notification-hub-enabled true
+             :notification-hub-url "https://notify.example.invalid"
+             :notification-hub-api-key "example_key"
              :workflow-engine-send-fn
              (fn [_] {:status :started :execution-id (str (random-uuid))})
              :workflow-engine-execution-fn
              (fn [{:keys [execution-id]}]
                (if (= execution-id "exec-complete")
                  {:status :succeeded :summary "Credit note issued."}
-                 {:status :failed :summary "Refund step failed."}))}]
+                 {:status :failed :summary "Refund step failed."}))
+             :notification-hub-send-fn #(swap! sent conj %)}]
     (disputes/mark-workflow-started!
      tenant-id (:dispute/id completed) "exec-complete" actor)
     (disputes/mark-workflow-started!
@@ -107,4 +112,6 @@
                            (disputes/get-by-id tenant-id (:dispute/id failed)))))
     (is (= "Credit note issued."
            (:dispute/resolution-summary
-            (disputes/get-by-id tenant-id (:dispute/id completed)))))))
+            (disputes/get-by-id tenant-id (:dispute/id completed)))))
+    (is (= ["dispute.resolved" "dispute.workflow_failed"]
+           (map #(get-in % [:event :event_type]) @sent)))))
