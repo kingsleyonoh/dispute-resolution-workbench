@@ -19,6 +19,8 @@
 (defn- reject! [message data]
   (throw (ex-info message data)))
 
+(declare ensure-attachable!)
+
 (defn- require-create-fields! [attrs]
   (doseq [field [:tenant-id :title :description :category
                  :severity :currency :created-by]]
@@ -150,6 +152,9 @@
                 (= to :resolved) (assoc :dispute/resolved-at occurred-at)
                 (:resolution-summary attrs)
                 (assoc :dispute/resolution-summary (:resolution-summary attrs))
+                (:workflow-execution-id attrs)
+                (assoc :dispute/workflow-execution-id
+                       (:workflow-execution-id attrs))
                 (= to :investigating) (assoc :dispute/workflow-execution-id nil))]
     (swap! state/disputes* assoc dispute-id after)
     (timeline! tenant-id dispute-id :status-changed
@@ -157,6 +162,20 @@
                actor occurred-at)
     (audit! tenant-id "dispute.status_changed" after before after actor)
     after))
+
+(defn mark-workflow-started! [tenant-id dispute-id execution-id actor]
+  (let [before (or (get-by-id tenant-id dispute-id)
+                   (reject! "dispute not found" {:type :dispute/not-found}))]
+    (ensure-attachable! before)
+    (when (= :resolving (:dispute/status before))
+      (reject! "resolution already running"
+               {:type :resolution/already-running}))
+    (let [after (transition! tenant-id dispute-id
+                             {:to :resolving
+                              :workflow-execution-id execution-id}
+                             actor)]
+      (timeline! tenant-id dispute-id :workflow-triggered execution-id actor nil)
+      after)))
 
 (defn ensure-attachable! [dispute]
   (when (contains? terminal-statuses (:dispute/status dispute))

@@ -42,3 +42,19 @@
          :service :workflow-engine
          :endpoint (endpoint cfg workflow-id)
          :trigger_data data}))))
+
+(defn execution-status! [cfg execution-id]
+  (if-not (:workflow-engine-enabled cfg)
+    {:status :disabled
+     :sent? false
+     :service :workflow-engine
+     :execution-id execution-id}
+    (let [cfg (require-config! cfg)]
+      (if-let [execution-fn (:workflow-engine-execution-fn cfg)]
+        (execution-fn {:execution-id execution-id
+                       :api-key (:workflow-engine-api-key cfg)
+                       :base-url (:workflow-engine-url cfg)})
+        {:status :stubbed
+         :sent? false
+         :service :workflow-engine
+         :execution-id execution-id}))))
