@@ -15,7 +15,7 @@ Owns the in-memory domain data abstraction for the core manual queue: counterpar
 - `src/drw/domain/hub_events.clj` - shared Notification Hub payload builders for dispute lifecycle and correlation-pending events.
 - `src/drw/domain/ingestion_sources.clj` - tenant-scoped ingestion source registry materialized from runtime config, settings persistence, pull-now execution through existing poll jobs, and run history.
 - `src/drw/domain/playbooks.clj` - tenant-scoped resolution playbook create/update/list/disable with duplicate-code protection and audit rows.
-- `src/drw/domain/reports.clj` - tenant-scoped dispute audit Selmer HTML rendering, ready/failed PDF artifact lifecycle, stored SHA-256/path metadata, and two-tenant identity leakage smoke checks.
+- `src/drw/domain/reports.clj` - tenant-scoped dispute audit Selmer HTML rendering, ready/failed PDF artifact lifecycle, stored SHA-256/path metadata, and auditable two-tenant identity leakage smoke checks.
 - `src/drw/domain/resolution.clj` - starts active tenant playbooks through Workflow Engine, stores execution ids, polls terminal execution status, applies resolved/investigating transitions, and emits terminal Hub events.
 - `src/drw/domain/sla.clj` - overdue SLA detection, idempotent breach claiming, audit/timeline rows, and Notification Hub event emission helper.
 
@@ -32,7 +32,7 @@ Owns the in-memory domain data abstraction for the core manual queue: counterpar
 - `test/drw/domain/ingestion_sources_test.clj` covers default source materialization, tenant isolation, settings saves, disabled/failure pull-now results, cursor updates, source refs, and run filters.
 - `test/drw/domain/playbooks_test.clj` covers tenant-scoped playbook saves, updates, soft-disable, validation, duplicate-code rejection, and cross-tenant misses.
 - Correlation review behavior is covered through `test/drw/api/workbench_handlers_test.clj` and real HTTP E2E tests: pending list/detail, cross-tenant 404, accept attach side effects, duplicate terminal rejection, and reject-without-attach.
-- `test/drw/domain/reports_test.clj` covers tenant-scoped dispute audit template rendering, injected PDF generation, ready/failed artifacts, cross-tenant fail-closed behavior, and tenant identity leakage checks.
+- `test/drw/domain/reports_test.clj` covers tenant-scoped dispute audit template rendering, injected PDF generation, ready/failed artifacts, cross-tenant fail-closed behavior, audited tenant ids, and tenant identity leakage rejection.
 - `test/drw/domain/resolution_test.clj` covers Workflow Engine resolution starts, invalid start rejection, successful completion polling, failed execution retry behavior, and terminal Hub emissions.
 - `test/drw/domain/sla_test.clj` covers overdue SLA breach side effects, idempotency, terminal dispute exclusion, and disabled Hub behavior.
 
