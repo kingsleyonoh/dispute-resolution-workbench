@@ -21,8 +21,10 @@
    :slaDueAt (str-or-nil (:dispute/sla-due-at entity))
    :assignedUserId (str-or-nil (:dispute/assigned-user-id entity))
    :assignedAt (str-or-nil (:dispute/assigned-at entity))
+   :workflowExecutionId (:dispute/workflow-execution-id entity)
    :createdAt (str-or-nil (:dispute/created-at entity))
    :createdBy (name-or-nil (:dispute/created-by entity))
+   :resolutionSummary (:dispute/resolution-summary entity)
    :resolvedAt (str-or-nil (:dispute/resolved-at entity))})
 
 (defn exception [entity]

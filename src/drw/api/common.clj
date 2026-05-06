@@ -89,6 +89,9 @@
       :exception/duplicate-source-ref (conflict message)
       :counterparty/duplicate-normalized-name (conflict message)
       :playbook/duplicate-code (conflict message)
+      :resolution/already-running (conflict message)
+      :resolution/workflow-disabled (unprocessable message)
+      :playbook/inactive (unprocessable message)
       :illegal-status-transition (illegal-transition message)
       :dispute/terminal (unprocessable message)
       (responses/error-response 500 "INTERNAL_ERROR"

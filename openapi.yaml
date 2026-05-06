@@ -400,6 +400,40 @@ paths:
           description: Correlation not found
         "422":
           $ref: "#/components/responses/IllegalStatusTransition"
+  /api/disputes/{id}/start-resolution:
+    post:
+      summary: Start a Workflow Engine resolution for a dispute
+      operationId: startDisputeResolution
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StartResolution"
+      responses:
+        "201":
+          description: Workflow execution started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  executionId:
+                    type: string
+                  workflowId:
+                    type: string
+                  dispute:
+                    $ref: "#/components/schemas/Dispute"
+        "404":
+          description: Dispute or playbook not found
+        "409":
+          description: Resolution already running
+        "422":
+          $ref: "#/components/responses/IllegalStatusTransition"
   /api/correlations/{id}/reject:
     post:
       summary: Reject a pending correlation without attaching its exception
@@ -760,6 +794,25 @@ components:
           type:
             - string
             - "null"
+        workflowExecutionId:
+          type:
+            - string
+            - "null"
+        resolutionSummary:
+          type:
+            - string
+            - "null"
+    StartResolution:
+      type: object
+      required:
+        - playbook_id
+      properties:
+        playbook_id:
+          type: string
+          format: uuid
+        inputs_json:
+          type: string
+          description: JSON string for playbook inputs.
     ExceptionCreate:
       type: object
       required:

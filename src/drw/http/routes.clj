@@ -15,7 +15,8 @@
             [drw.http.json :as json]
             [drw.ui.handlers :as ui]
             [drw.ui.ingestion-handlers :as ui-ingestion]
-            [drw.ui.playbook-handlers :as ui-playbooks]))
+            [drw.ui.playbook-handlers :as ui-playbooks]
+            [drw.ui.resolution-handlers :as ui-resolution]))
 
 (defn- api-chain [cfg handler]
   [(request-id/interceptor)
@@ -50,6 +51,9 @@
      :route-name :ui-disputes-comment]
     ["/disputes/:id/exceptions" :post (page-chain ui/attach-exception)
      :route-name :ui-disputes-attach-exception]
+    ["/disputes/:id/start-resolution" :post
+     (page-chain (ui-resolution/start-resolution cfg))
+     :route-name :ui-disputes-start-resolution]
     ["/counterparties" :get (page-chain ui/counterparties-list)
      :route-name :ui-counterparties-list]
     ["/counterparties/:id" :get (page-chain ui/counterparty-detail)
@@ -120,6 +124,9 @@
     ["/api/disputes/:id/attach-exception" :post
      (api-chain cfg (disputes/attach-exception-handler cfg))
      :route-name :disputes-attach-exception]
+    ["/api/disputes/:id/start-resolution" :post
+     (api-chain cfg (disputes/start-resolution-handler cfg))
+     :route-name :disputes-start-resolution]
     ["/api/exceptions" :get
      (api-chain cfg (exceptions/list-handler cfg))
      :route-name :exceptions-list]

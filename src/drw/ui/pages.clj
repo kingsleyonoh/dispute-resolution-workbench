@@ -5,6 +5,7 @@
             [drw.ui.correlations :as correlation-page]
             [drw.ui.ingestion :as ingestion-page]
             [drw.ui.page-shell :as page-shell]
+            [drw.ui.resolution :as resolution-page]
             [drw.ui.session :as session]))
 
 (defn login-page [error]
@@ -181,6 +182,7 @@
                         [:section {:class "grid gap-4 md:grid-cols-2"}
                          (comment-form dispute-id)
                          (exception-form dispute-id)]
+                        (resolution-page/start-section tenant-id dispute-id)
                         [:section {:class "rounded border bg-white p-5"}
                          [:h2 {:class "font-semibold"} "Exceptions"]
                          (into [:ul {:class "mt-3 space-y-2 text-sm"}]

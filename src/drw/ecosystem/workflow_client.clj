@@ -35,6 +35,7 @@
           data (snake-map trigger-data)]
       (if-let [send-fn (:workflow-engine-send-fn cfg)]
         (send-fn {:endpoint (endpoint cfg workflow-id)
+                  :workflow-id workflow-id
                   :api-key (:workflow-engine-api-key cfg)
                   :trigger-data data})
         {:status :stubbed

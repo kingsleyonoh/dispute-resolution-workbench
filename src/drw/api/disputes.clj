@@ -2,7 +2,9 @@
   (:require [drw.api.common :as api]
             [drw.api.serializers :as serializers]
             [drw.domain.disputes :as disputes]
-            [drw.domain.exceptions :as exceptions]))
+            [drw.domain.exceptions :as exceptions]
+            [drw.domain.playbooks :as playbooks]
+            [drw.domain.resolution :as resolution]))
 
 (defn- dispute-id [request]
   (api/uuid-value (get-in request [:path-params :id])))
@@ -114,3 +116,29 @@
             dispute (disputes/get-by-id tenant-id (dispute-id request))]
         (api/ok {:exception (serializers/exception attached)
                  :dispute (serializers/dispute dispute)})))))
+
+(defn- resolution-inputs [body]
+  (if-let [raw (api/value body :inputs_json :inputsJson)]
+    {:raw raw}
+    {}))
+
+(defn start-resolution-handler [cfg]
+  (fn [request]
+    (api/with-domain-errors
+      (let [tenant-id (api/current-tenant-id request)
+            body (api/parse-body request)
+            playbook (playbooks/get-by-id
+                      tenant-id
+                      (api/uuid-value (api/value body :playbook_id
+                                                 :playbookId)))
+            result (resolution/start-resolution!
+                    tenant-id
+                    (dispute-id request)
+                    playbook
+                    (resolution-inputs body)
+                    cfg
+                    (api/actor request))
+            dispute (disputes/get-by-id tenant-id (dispute-id request))]
+        (api/created {:executionId (:execution-id result)
+                      :workflowId (:workflow-id result)
+                      :dispute (serializers/dispute dispute)})))))

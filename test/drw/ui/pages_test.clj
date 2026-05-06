@@ -6,6 +6,7 @@
             [drw.domain.disputes :as disputes]
             [drw.domain.exceptions :as exceptions]
             [drw.domain.ingestion-sources :as ingestion]
+            [drw.domain.playbooks :as playbooks]
             [drw.domain.state :as state]
             [drw.fixtures :as fixtures]
             [drw.ui.pages :as pages]))
@@ -41,6 +42,11 @@
                     :currency "EUR"
                     :observed-at #inst "2026-05-05T10:00:00.000-00:00"}
                    actor)]
+    (playbooks/save! tenant-id
+                     {:code "credit-note-and-refund"
+                      :display-name "Credit note and refund"
+                      :workflow-engine-workflow-id "wf-credit"}
+                     actor)
     {:counterparty counterparty
      :dispute dispute
      :exception exception}))
@@ -70,6 +76,8 @@
     (is (str/includes? detail-html "Transition status"))
     (is (str/includes? detail-html "Add comment"))
     (is (str/includes? detail-html "Attach manual exception"))
+    (is (str/includes? detail-html "Start resolution"))
+    (is (str/includes? detail-html "Credit note and refund"))
     (is (str/includes? detail-html (:exception/source-ref exception)))
     (is (str/includes? counterparties-html "Counterparties"))
     (is (str/includes? counterparties-html "UI Vendor"))
