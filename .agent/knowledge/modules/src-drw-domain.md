@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Owns the in-memory domain data abstraction for the core manual queue: counterparties, disputes, exceptions, adapter/Hub ingestion, ingestion source settings/runs, correlation scoring/candidates/review decisions, report sources, timeline rows, audit rows, per-tenant dispute references, and SLA breach claims.
+Owns the in-memory domain data abstraction for the core manual queue: counterparties, disputes, exceptions, adapter/Hub ingestion, ingestion source settings/runs, correlation scoring/candidates/review decisions, resolution orchestration, report sources, timeline rows, audit rows, per-tenant dispute references, and SLA breach claims.
 
 ## Key files
 
@@ -14,6 +14,7 @@ Owns the in-memory domain data abstraction for the core manual queue: counterpar
 - `src/drw/domain/exceptions.clj` - manual exception creation, source-system/kind validation, duplicate source-ref prevention, tenant-scoped listing, attach flow, correlation candidate listing, and `ingest!` for normalized adapter/Hub exceptions.
 - `src/drw/domain/ingestion_sources.clj` - tenant-scoped ingestion source registry materialized from runtime config, settings persistence, pull-now execution through existing poll jobs, and run history.
 - `src/drw/domain/reports.clj` - tenant-scoped dispute audit PDF-source HTML rendering and two-tenant identity leakage smoke checks.
+- `src/drw/domain/resolution.clj` - starts active tenant playbooks through Workflow Engine, stores execution ids, polls terminal execution status, and applies resolved/investigating transitions.
 - `src/drw/domain/sla.clj` - overdue SLA detection, idempotent breach claiming, audit/timeline rows, and Notification Hub event emission helper.
 
 ## Dependencies
@@ -29,6 +30,7 @@ Owns the in-memory domain data abstraction for the core manual queue: counterpar
 - `test/drw/domain/ingestion_sources_test.clj` covers default source materialization, tenant isolation, settings saves, disabled/failure pull-now results, cursor updates, source refs, and run filters.
 - Correlation review behavior is covered through `test/drw/api/workbench_handlers_test.clj` and real HTTP E2E tests: pending list/detail, cross-tenant 404, accept attach side effects, duplicate terminal rejection, and reject-without-attach.
 - `test/drw/domain/reports_test.clj` covers tenant-scoped dispute audit PDF-source rendering, cross-tenant fail-closed behavior, and tenant identity leakage checks.
+- `test/drw/domain/resolution_test.clj` covers Workflow Engine resolution starts, invalid start rejection, successful completion polling, and failed execution retry behavior.
 - `test/drw/domain/sla_test.clj` covers overdue SLA breach side effects, idempotency, terminal dispute exclusion, and disabled Hub behavior.
 
 ## Cross-references
