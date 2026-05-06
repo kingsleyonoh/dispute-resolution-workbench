@@ -4,6 +4,7 @@
             [drw.api.disputes :as disputes]
             [drw.api.exceptions :as exceptions]
             [drw.api.ingestion :as ingestion]
+            [drw.api.playbooks :as playbooks]
             [drw.api.tenants :as tenants]
             [drw.http.handlers :as handlers]
             [drw.http.interceptors.audit :as audit]
@@ -13,7 +14,8 @@
             [drw.http.interceptors.tenant :as tenant]
             [drw.http.json :as json]
             [drw.ui.handlers :as ui]
-            [drw.ui.ingestion-handlers :as ui-ingestion]))
+            [drw.ui.ingestion-handlers :as ui-ingestion]
+            [drw.ui.playbook-handlers :as ui-playbooks]))
 
 (defn- api-chain [cfg handler]
   [(request-id/interceptor)
@@ -70,7 +72,16 @@
      :route-name :ui-ingestion-save]
     ["/settings/ingestion/:id/pull-now" :post
      (page-chain (ui-ingestion/pull-ingestion-now cfg))
-     :route-name :ui-ingestion-pull-now]})
+     :route-name :ui-ingestion-pull-now]
+    ["/settings/playbooks" :get
+     (page-chain (ui-playbooks/playbook-settings cfg))
+     :route-name :ui-playbooks-settings]
+    ["/settings/playbooks" :post
+     (page-chain (ui-playbooks/save-playbook cfg))
+     :route-name :ui-playbooks-save]
+    ["/settings/playbooks/:id/disable" :post
+     (page-chain (ui-playbooks/disable-playbook cfg))
+     :route-name :ui-playbooks-disable]})
 
 (defn- tenant-routes [cfg]
   #{["/api/health" :get (api-chain cfg handlers/health) :route-name :health]
@@ -143,7 +154,19 @@
      :route-name :ingestion-sources-pull-now]
     ["/api/ingestion-runs" :get
      (api-chain cfg (ingestion/list-runs-handler cfg))
-     :route-name :ingestion-runs-list]})
+     :route-name :ingestion-runs-list]
+    ["/api/playbooks" :get
+     (api-chain cfg (playbooks/list-handler cfg))
+     :route-name :playbooks-list]
+    ["/api/playbooks" :post
+     (api-chain cfg (playbooks/create-handler cfg))
+     :route-name :playbooks-create]
+    ["/api/playbooks/:id" :put
+     (api-chain cfg (playbooks/update-handler cfg))
+     :route-name :playbooks-update]
+    ["/api/playbooks/:id" :delete
+     (api-chain cfg (playbooks/delete-handler cfg))
+     :route-name :playbooks-delete]})
 
 (defn- counterparty-routes [cfg]
   #{["/api/counterparties" :get

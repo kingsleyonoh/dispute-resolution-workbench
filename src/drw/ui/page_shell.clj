@@ -19,6 +19,8 @@
     "Correlations"]
    [:a {:href "/settings/ingestion" :class "font-medium text-slate-700"}
     "Ingestion"]
+   [:a {:href "/settings/playbooks" :class "font-medium text-slate-700"}
+    "Playbooks"]
    [:form {:method "post" :action "/logout"}
     (session/csrf-field)
     [:button {:class "text-slate-500"} "Sign out"]]])

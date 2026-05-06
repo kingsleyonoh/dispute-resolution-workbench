@@ -26,6 +26,12 @@
            (:ui-ingestion-save routes-by-name)))
     (is (= {:path "/settings/ingestion/:id/pull-now" :method :post}
            (:ui-ingestion-pull-now routes-by-name)))
+    (is (= {:path "/settings/playbooks" :method :get}
+           (:ui-playbooks-settings routes-by-name)))
+    (is (= {:path "/settings/playbooks" :method :post}
+           (:ui-playbooks-save routes-by-name)))
+    (is (= {:path "/settings/playbooks/:id/disable" :method :post}
+           (:ui-playbooks-disable routes-by-name)))
     (is (= {:path "/api/tenants/register" :method :post}
            (:tenant-register routes-by-name)))
     (is (= {:path "/api/tenants/me" :method :get}
@@ -56,6 +62,14 @@
            (:ingestion-sources-pull-now routes-by-name)))
     (is (= {:path "/api/ingestion-runs" :method :get}
            (:ingestion-runs-list routes-by-name)))
+    (is (= {:path "/api/playbooks" :method :get}
+           (:playbooks-list routes-by-name)))
+    (is (= {:path "/api/playbooks" :method :post}
+           (:playbooks-create routes-by-name)))
+    (is (= {:path "/api/playbooks/:id" :method :put}
+           (:playbooks-update routes-by-name)))
+    (is (= {:path "/api/playbooks/:id" :method :delete}
+           (:playbooks-delete routes-by-name)))
     (is (= {:path "/api/counterparties" :method :get}
            (:counterparties-list routes-by-name)))))
 

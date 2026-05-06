@@ -517,6 +517,98 @@ paths:
                     type:
                       - string
                       - "null"
+  /api/playbooks:
+    get:
+      summary: List tenant-scoped resolution playbooks
+      operationId: listPlaybooks
+      security:
+        - ApiKeyAuth: []
+      responses:
+        "200":
+          description: Playbook page
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  playbooks:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Playbook"
+                  nextCursor:
+                    type:
+                      - string
+                      - "null"
+    post:
+      summary: Create a tenant-scoped resolution playbook
+      operationId: createPlaybook
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlaybookSave"
+      responses:
+        "201":
+          description: Playbook created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  playbook:
+                    $ref: "#/components/schemas/Playbook"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "409":
+          description: Duplicate playbook code
+  /api/playbooks/{id}:
+    put:
+      summary: Update a tenant-scoped resolution playbook
+      operationId: updatePlaybook
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlaybookSave"
+      responses:
+        "200":
+          description: Playbook updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  playbook:
+                    $ref: "#/components/schemas/Playbook"
+        "404":
+          description: Playbook not found
+    delete:
+      summary: Disable a tenant-scoped resolution playbook
+      operationId: deletePlaybook
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Playbook disabled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  playbook:
+                    $ref: "#/components/schemas/Playbook"
+        "404":
+          description: Playbook not found
   /api/counterparties:
     get:
       summary: List tenant-scoped counterparties
@@ -875,6 +967,42 @@ components:
           type:
             - object
             - "null"
+    PlaybookSave:
+      type: object
+      properties:
+        code:
+          type: string
+        display_name:
+          type: string
+        description:
+          type: string
+        workflow_engine_workflow_id:
+          type: string
+        required_inputs_schema:
+          type: string
+        is_active:
+          type: boolean
+    Playbook:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        code:
+          type: string
+        displayName:
+          type: string
+        description:
+          type: string
+        workflowEngineWorkflowId:
+          type: string
+        requiredInputsSchema:
+          type: string
+        isActive:
+          type: boolean
     Counterparty:
       type: object
       properties:

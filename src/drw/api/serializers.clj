@@ -112,3 +112,14 @@
    :finishedAt (str-or-nil (:ingestion-run/finished-at entity))
    :cursor (:ingestion-run/cursor entity)
    :error (:ingestion-run/error entity)})
+
+(defn playbook [entity]
+  {:id (str (:playbook/id entity))
+   :tenantId (str (:playbook/tenant-id entity))
+   :code (:playbook/code entity)
+   :displayName (:playbook/display-name entity)
+   :description (:playbook/description entity)
+   :workflowEngineWorkflowId
+   (:playbook/workflow-engine-workflow-id entity)
+   :requiredInputsSchema (:playbook/required-inputs-schema entity)
+   :isActive (:playbook/is-active entity)})
