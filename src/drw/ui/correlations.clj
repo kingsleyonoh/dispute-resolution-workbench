@@ -1,7 +1,8 @@
 (ns drw.ui.correlations
   (:require [drw.domain.correlations :as correlations]
             [drw.domain.disputes :as disputes]
-            [drw.domain.exceptions :as exceptions]))
+            [drw.domain.exceptions :as exceptions]
+            [drw.ui.session :as session]))
 
 (defn- status-label [status]
   (-> status name (.replace "-" " ") (.replace "_" " ")))
@@ -11,6 +12,7 @@
 
 (defn- decision-form [id action label style]
   [:form {:method "post" :action (str "/correlations/" id "/" action)}
+   (session/csrf-field)
    [:button {:class style} label]])
 
 (defn- candidate-row [tenant-id candidate]

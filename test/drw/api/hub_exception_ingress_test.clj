@@ -13,17 +13,29 @@
 (def tenant-a (get tenants "acme-gmbh-de"))
 (def tenant-b (get tenants "globex-inc-us"))
 (def secret "dummy_hub_ingress_secret")
+(def timestamp "1778061600")
+(def now-ms 1778061600000)
 
 (defn- hex [bytes]
   (apply str (map #(format "%02x" (bit-and % 0xff)) bytes)))
 
-(defn- sign [body]
+(defn- sign [delivery-id body]
   (let [mac (Mac/getInstance "HmacSHA256")]
     (.init mac (SecretKeySpec. (.getBytes secret "UTF-8") "HmacSHA256"))
-    (str "sha256=" (hex (.doFinal mac (.getBytes body "UTF-8"))))))
+    (str "sha256="
+         (hex (.doFinal mac (.getBytes
+                             (str timestamp "." delivery-id "." body)
+                             "UTF-8"))))))
+
+(defn- hub-headers [tenant delivery-id body]
+  {"x-hub-signature-256" (sign delivery-id body)
+   "x-hub-tenant-slug" (:tenant/slug tenant)
+   "x-hub-timestamp" timestamp
+   "x-hub-delivery-id" delivery-id})
 
 (defn- reset-state! []
   (store/reset-store!)
+  (api-exceptions/reset-hub-deliveries!)
   (state/reset-store!))
 
 (defn- req [body headers]
@@ -42,11 +54,10 @@
 (deftest hub-ingress-verifies-hmac-and-ingests-through-domain-pipeline
   (reset-state!)
   (let [handler (api-exceptions/from-hub-handler
-                 {:hub-ingress-secret secret})
+                 {:hub-ingress-secret secret :hub-now-ms now-ms})
         response (handler
                   (req body
-                       {"x-hub-signature-256" (sign body)
-                        "x-hub-tenant-slug" (:tenant/slug tenant-a)}))
+                       (hub-headers tenant-a "delivery-1" body)))
         stored-a (exceptions/list-by-tenant
                   (:tenant/id tenant-a)
                   {:source-system :invoice-recon})
@@ -63,55 +74,62 @@
 (deftest hub-ingress-rejects-auth-tenant-and-payload-failures
   (reset-state!)
   (let [handler (api-exceptions/from-hub-handler
-                 {:hub-ingress-secret secret})
+                 {:hub-ingress-secret secret :hub-now-ms now-ms})
         missing-signature (handler
-                           (req body {"x-hub-tenant-slug"
-                                      (:tenant/slug tenant-a)}))
+                           (req body (dissoc (hub-headers tenant-a
+                                                          "delivery-missing"
+                                                          body)
+                                             "x-hub-signature-256")))
         invalid-signature (handler
                            (req body
                                 {"x-hub-signature-256" "sha256=bad"
                                  "x-hub-tenant-slug"
-                                 (:tenant/slug tenant-a)}))
+                                 (:tenant/slug tenant-a)
+                                 "x-hub-timestamp" timestamp
+                                 "x-hub-delivery-id" "delivery-bad"}))
         missing-tenant (handler
-                        (req body {"x-hub-signature-256" (sign body)}))
+                        (req body (dissoc (hub-headers tenant-a
+                                                       "delivery-no-tenant"
+                                                       body)
+                                          "x-hub-tenant-slug")))
         unknown-tenant (handler
                         (req body
-                             {"x-hub-signature-256" (sign body)
-                              "x-hub-tenant-slug" "missing-tenant"}))
+                             (assoc (hub-headers tenant-a
+                                                 "delivery-unknown"
+                                                 body)
+                                    "x-hub-tenant-slug" "missing-tenant")))
         disabled-tenant (do
                           (store/disable-tenant! (:tenant/id tenant-b))
                           (handler
                            (req body
-                                {"x-hub-signature-256" (sign body)
-                                 "x-hub-tenant-slug"
-                                 (:tenant/slug tenant-b)})))
+                                (hub-headers tenant-b "delivery-disabled" body))))
         malformed (let [bad-body "{not-json"]
                     (handler
                      (req bad-body
-                          {"x-hub-signature-256" (sign bad-body)
-                           "x-hub-tenant-slug" (:tenant/slug tenant-a)})))
+                          (hub-headers tenant-a "delivery-malformed" bad-body))))
         unsupported (let [bad-body (str/replace body "invoice-recon"
                                                 "unknown-system")]
                       (handler
                        (req bad-body
-                            {"x-hub-signature-256" (sign bad-body)
-                             "x-hub-tenant-slug" (:tenant/slug tenant-a)})))
+                            (hub-headers tenant-a "delivery-system" bad-body))))
         unsupported-kind (let [bad-body (str/replace body
                                                      "invoice-discrepancy"
                                                      "unknown-kind")]
                            (handler
                             (req bad-body
-                                 {"x-hub-signature-256" (sign bad-body)
-                                  "x-hub-tenant-slug"
-                                  (:tenant/slug tenant-a)})))
+                                 (hub-headers tenant-a "delivery-kind" bad-body))))
         duplicate-first (handler
                          (req body
-                              {"x-hub-signature-256" (sign body)
-                               "x-hub-tenant-slug" (:tenant/slug tenant-a)}))
+                              (hub-headers tenant-a "delivery-duplicate" body)))
         duplicate-second (handler
                           (req body
-                               {"x-hub-signature-256" (sign body)
-                                "x-hub-tenant-slug" (:tenant/slug tenant-a)}))]
+                               (hub-headers tenant-a "delivery-duplicate" body)))
+        stale (handler
+               (req body
+                    {"x-hub-signature-256" (sign "delivery-stale" body)
+                     "x-hub-tenant-slug" (:tenant/slug tenant-a)
+                     "x-hub-timestamp" "1"
+                     "x-hub-delivery-id" "delivery-stale"}))]
     (is (= 401 (:status missing-signature)))
     (is (= 401 (:status invalid-signature)))
     (is (= 400 (:status missing-tenant)))
@@ -121,4 +139,5 @@
     (is (= 400 (:status unsupported)))
     (is (= 400 (:status unsupported-kind)))
     (is (= 201 (:status duplicate-first)))
-    (is (= 409 (:status duplicate-second)))))
+    (is (= 200 (:status duplicate-second)))
+    (is (= 401 (:status stale)))))

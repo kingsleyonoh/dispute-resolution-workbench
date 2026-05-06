@@ -13,14 +13,19 @@
            [javax.crypto.spec SecretKeySpec]))
 
 (def secret "dummy_hub_ingress_secret")
+(def timestamp "1778061600")
+(def now-ms 1778061600000)
 
 (defn- hex [bytes]
   (apply str (map #(format "%02x" (bit-and % 0xff)) bytes)))
 
-(defn- sign [body]
+(defn- sign [delivery-id body]
   (let [mac (Mac/getInstance "HmacSHA256")]
     (.init mac (SecretKeySpec. (.getBytes secret "UTF-8") "HmacSHA256"))
-    (str "sha256=" (hex (.doFinal mac (.getBytes body "UTF-8"))))))
+    (str "sha256="
+         (hex (.doFinal mac (.getBytes
+                             (str timestamp "." delivery-id "." body)
+                             "UTF-8"))))))
 
 (defn- request
   ([method url] (request method url nil nil))
@@ -50,7 +55,8 @@
   (server/start! {:port port
                   :api-key-prefix "drw_live_"
                   :self-registration-enabled true
-                  :hub-ingress-secret secret}))
+                  :hub-ingress-secret secret
+                  :hub-now-ms now-ms}))
 
 (def body
   (str "{\"source_ref\":\"HUB-E2E-1\","
@@ -75,14 +81,18 @@
                    "POST" (str base "/api/exceptions/from-hub")
                    body
                    {"Content-Type" "application/json"
-                    "X-Hub-Signature-256" (sign body)
-                    "X-Hub-Tenant-Slug" tenant-slug})
+                    "X-Hub-Signature-256" (sign "delivery-e2e-1" body)
+                    "X-Hub-Tenant-Slug" tenant-slug
+                    "X-Hub-Timestamp" timestamp
+                    "X-Hub-Delivery-Id" "delivery-e2e-1"})
             missing-hmac (request
                           "POST" (str base "/api/exceptions/from-hub")
                           body
                           {"Content-Type" "application/json"
                            "X-API-Key" "drw_live_not_a_hub_secret"
-                           "X-Hub-Tenant-Slug" tenant-slug})
+                           "X-Hub-Tenant-Slug" tenant-slug
+                           "X-Hub-Timestamp" timestamp
+                           "X-Hub-Delivery-Id" "delivery-e2e-missing"})
             stored (exceptions/list-by-tenant
                     tenant-id
                     {:source-system :invoice-recon})]

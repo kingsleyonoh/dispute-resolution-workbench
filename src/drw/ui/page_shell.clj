@@ -1,5 +1,6 @@
 (ns drw.ui.page-shell
-  (:require [drw.ui.layout :as layout]))
+  (:require [drw.ui.layout :as layout]
+            [drw.ui.session :as session]))
 
 (def statuses
   [:assigned :investigating :awaiting_counterparty
@@ -19,6 +20,7 @@
    [:a {:href "/settings/ingestion" :class "font-medium text-slate-700"}
     "Ingestion"]
    [:form {:method "post" :action "/logout"}
+    (session/csrf-field)
     [:button {:class "text-slate-500"} "Sign out"]]])
 
 (defn shell [title & body]

@@ -1,5 +1,6 @@
 (ns drw.domain.ingestion-sources
-  (:require [drw.domain.state :as state])
+  (:require [drw.domain.ingestion-url :as ingestion-url]
+            [drw.domain.state :as state])
   (:import [java.time Instant]
            [java.util UUID]))
 
@@ -63,6 +64,18 @@
                                (:default-interval spec))
    :filters {}})
 
+(defn- validate-base-url! [source base-url cfg]
+  (let [spec (get (source-registry cfg)
+                  (:ingestion-source/source-system source))
+        configured-host (ingestion-url/uri-host (get cfg (:url-key spec)))
+        requested-host (ingestion-url/uri-host base-url)]
+    (when (ingestion-url/private-host? requested-host)
+      (reject! "base-url host is not allowed"
+               {:type :validation-error :field :base-url}))
+    (when (and configured-host (not= configured-host requested-host))
+      (reject! "base-url host must match configured adapter host"
+               {:type :validation-error :field :base-url}))))
+
 (defn- default-source [tenant-id source-system cfg]
   (let [spec (get (source-registry cfg) source-system)]
     {:ingestion-source/id (UUID/randomUUID)
@@ -93,24 +106,28 @@
    (some #(when (= source-id (:ingestion-source/id %)) %)
          (list-sources tenant-id cfg))))
 
-(defn- apply-settings [source {:keys [enabled? base-url
-                                      poll-interval-seconds filters]}]
-  (cond-> source
-    (some? enabled?) (assoc :ingestion-source/is-enabled enabled?)
-    (some? base-url) (assoc-in [:ingestion-source/config :base-url] base-url)
-    (some? poll-interval-seconds)
-    (assoc-in [:ingestion-source/config :poll-interval-seconds]
-              poll-interval-seconds)
-    (some? filters) (assoc-in [:ingestion-source/config :filters] filters)))
+(defn- apply-settings [source settings cfg]
+  (let [{:keys [enabled? base-url poll-interval-seconds filters]} settings]
+    (when (some? base-url)
+      (validate-base-url! source base-url cfg))
+    (cond-> source
+      (some? enabled?) (assoc :ingestion-source/is-enabled enabled?)
+      (some? base-url) (assoc-in [:ingestion-source/config :base-url] base-url)
+      (some? poll-interval-seconds)
+      (assoc-in [:ingestion-source/config :poll-interval-seconds]
+                poll-interval-seconds)
+      (some? filters) (assoc-in [:ingestion-source/config :filters] filters))))
 
-(defn save-settings! [tenant-id source-id settings]
-  (let [source (or (get-source tenant-id source-id)
-                   (reject! "ingestion source not found"
-                            {:type :ingestion-source/not-found}))
-        updated (apply-settings source settings)]
-    (swap! state/ingestion-sources*
-           assoc (:ingestion-source/id updated) updated)
-    updated))
+(defn save-settings!
+  ([tenant-id source-id settings] (save-settings! tenant-id source-id settings {}))
+  ([tenant-id source-id settings cfg]
+   (let [source (or (get-source tenant-id source-id cfg)
+                    (reject! "ingestion source not found"
+                             {:type :ingestion-source/not-found}))
+         updated (apply-settings source settings cfg)]
+     (swap! state/ingestion-sources*
+            assoc (:ingestion-source/id updated) updated)
+     updated)))
 
 (defn save-settings-by-system! [tenant-id source-system settings cfg]
   (let [source (ensure-source! tenant-id
@@ -118,7 +135,7 @@
                                 (source-registry cfg)
                                 source-system)
                                cfg)]
-    (save-settings! tenant-id (:ingestion-source/id source) settings)))
+    (save-settings! tenant-id (:ingestion-source/id source) settings cfg)))
 
 (defn- effective-cfg [cfg source]
   (let [spec (get (source-registry cfg)

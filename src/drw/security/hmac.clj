@@ -15,6 +15,9 @@
     (.init mac (SecretKeySpec. (.getBytes secret "UTF-8") algorithm))
     (str prefix (bytes->hex (.doFinal mac (.getBytes body "UTF-8"))))))
 
+(defn signed-message [timestamp delivery-id body]
+  (str timestamp "." delivery-id "." body))
+
 (defn valid-signature? [secret body presented]
   (when (and (not (str/blank? secret))
              (not (str/blank? presented))

@@ -12,7 +12,8 @@
             [drw.http.interceptors.request-id :as request-id]
             [drw.http.interceptors.tenant :as tenant]
             [drw.http.json :as json]
-            [drw.ui.handlers :as ui]))
+            [drw.ui.handlers :as ui]
+            [drw.ui.ingestion-handlers :as ui-ingestion]))
 
 (defn- api-chain [cfg handler]
   [(request-id/interceptor)
@@ -62,13 +63,13 @@
      (page-chain ui/reject-correlation)
      :route-name :ui-correlations-reject]
     ["/settings/ingestion" :get
-     (page-chain (ui/ingestion-settings cfg))
+     (page-chain (ui-ingestion/ingestion-settings cfg))
      :route-name :ui-ingestion-settings]
     ["/settings/ingestion" :post
-     (page-chain (ui/save-ingestion-settings cfg))
+     (page-chain (ui-ingestion/save-ingestion-settings cfg))
      :route-name :ui-ingestion-save]
     ["/settings/ingestion/:id/pull-now" :post
-     (page-chain (ui/pull-ingestion-now cfg))
+     (page-chain (ui-ingestion/pull-ingestion-now cfg))
      :route-name :ui-ingestion-pull-now]})
 
 (defn- tenant-routes [cfg]

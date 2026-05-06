@@ -4,7 +4,8 @@
             [drw.domain.exceptions :as exceptions]
             [drw.ui.correlations :as correlation-page]
             [drw.ui.ingestion :as ingestion-page]
-            [drw.ui.page-shell :as page-shell]))
+            [drw.ui.page-shell :as page-shell]
+            [drw.ui.session :as session]))
 
 (defn login-page [error]
   (page-shell/page
@@ -79,6 +80,7 @@
    [:h2 {:class "text-lg font-semibold"} "Create dispute"]
    [:form {:method "post" :action "/disputes"
            :class "mt-4 grid gap-3 md:grid-cols-2"}
+    (session/csrf-field)
     [:input {:name "title" :placeholder "Title" :required true
              :class "rounded border px-3 py-2"}]
     [:input {:name "currency" :placeholder "Currency" :value "EUR"
@@ -113,6 +115,7 @@
     [:section {:class "grid gap-4 md:grid-cols-2"}
      [:form {:method "post" :action (str "/disputes/" id "/assign")
              :class "rounded border bg-white p-4"}
+      (session/csrf-field)
       [:h2 {:class "font-semibold"} "Assign owner"]
       [:input {:name "user_id" :placeholder "User UUID" :required true
                :class "mt-3 w-full rounded border px-3 py-2"}]
@@ -120,6 +123,7 @@
        "Assign"]]
      [:form {:method "post" :action (str "/disputes/" id "/transition")
              :class "rounded border bg-white p-4"}
+      (session/csrf-field)
       [:h2 {:class "font-semibold"} "Transition status"]
       (into [:select {:name "to_status" :class "mt-3 w-full rounded border px-3 py-2"}]
             (map (fn [status] [:option {:value (name status)}
@@ -131,6 +135,7 @@
 (defn- exception-form [id]
   [:form {:method "post" :action (str "/disputes/" id "/exceptions")
           :class "rounded border bg-white p-4"}
+   (session/csrf-field)
    [:h2 {:class "font-semibold"} "Attach manual exception"]
    [:div {:class "mt-3 grid gap-3 md:grid-cols-2"}
     [:input {:name "source_ref" :placeholder "Source reference" :required true
@@ -147,6 +152,7 @@
 (defn- comment-form [id]
   [:form {:method "post" :action (str "/disputes/" id "/comments")
           :class "rounded border bg-white p-4"}
+   (session/csrf-field)
    [:h2 {:class "font-semibold"} "Add comment"]
    [:textarea {:name "body" :required true
                :class "mt-3 w-full rounded border px-3 py-2"}]

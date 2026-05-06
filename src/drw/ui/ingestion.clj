@@ -1,7 +1,8 @@
 (ns drw.ui.ingestion
   (:require [clojure.string :as str]
             [drw.domain.ingestion-sources :as ingestion]
-            [drw.jobs.ingestion-registry :as registry]))
+            [drw.jobs.ingestion-registry :as registry]
+            [drw.ui.session :as session]))
 
 (defn- source-title [source]
   (or (:ingestion-source/display-name source)
@@ -16,6 +17,7 @@
         config (:ingestion-source/config source)]
     [:form {:method "post" :action "/settings/ingestion"
             :class "rounded border border-slate-200 bg-white p-4"}
+     (session/csrf-field)
      [:div {:class "flex items-center justify-between gap-4"}
       [:div
        [:h2 {:class "font-semibold"} (source-title source)]

@@ -4,19 +4,18 @@
             [drw.domain.correlations :as correlations]
             [drw.domain.disputes :as disputes]
             [drw.domain.exceptions :as exceptions]
-            [drw.domain.ingestion-sources :as ingestion]
-            [drw.jobs.ingestion-registry :as registry]
             [drw.tenants.store :as store]
+            [drw.ui.csrf :as csrf]
             [drw.ui.pages :as pages]
             [drw.ui.request :as ui-req]
             [drw.ui.session :as session]))
 
-(defn- html [node]
+(defn html [node]
   {:status 200
    :headers {"Content-Type" "text/html; charset=utf-8"}
    :body (str (h/html node))})
 
-(defn- redirect
+(defn redirect
   ([location] (redirect location {}))
   ([location headers]
    {:status 303
@@ -39,9 +38,10 @@
   {:actor-kind :user
    :actor-id (:tenant/slug tenant)})
 
-(defn- require-tenant [request render]
+(defn require-tenant [request render]
   (if-let [tenant (current-tenant request)]
-    (render tenant)
+    (binding [session/*csrf-token* (session/csrf-token request)]
+      (render tenant))
     (login-redirect)))
 
 (defn login [_request]
@@ -53,13 +53,13 @@
       (if-let [tenant (store/tenant-by-api-key api-key)]
         (if (:tenant/is-active tenant)
           (let [token (session/create-session! (:tenant/id tenant))]
-            (redirect "/" {"Set-Cookie" (session/session-cookie token)}))
+            (redirect "/" {"Set-Cookie" (session/session-cookie token _cfg)}))
           (html (pages/login-page "Tenant is disabled.")))
         (html (pages/login-page "Valid API key is required."))))))
 
 (defn logout [request]
   (session/clear-session! request)
-  (redirect "/login" {"Set-Cookie" session/expired-cookie}))
+  (redirect "/login" {"Set-Cookie" (session/expired-cookie)}))
 
 (defn home [request]
   (if-let [tenant (current-tenant request)]
@@ -87,13 +87,15 @@
   (require-tenant
    request
    (fn [tenant]
-     (let [form (ui-req/parse-form request)
-           dispute (disputes/create-dispute!
-                    (create-dispute-attrs (:tenant/id tenant) form)
-                    (actor tenant))]
-       (redirect (str "/disputes/" (:dispute/id dispute)))))))
+     (csrf/with-form
+       request
+       (fn [form]
+         (let [dispute (disputes/create-dispute!
+                        (create-dispute-attrs (:tenant/id tenant) form)
+                        (actor tenant))]
+           (redirect (str "/disputes/" (:dispute/id dispute)))))))))
 
-(defn- path-id [request]
+(defn path-id [request]
   (ui-req/uuid-value (get-in request [:path-params :id])))
 
 (defn dispute-detail [request]
@@ -108,37 +110,43 @@
   (require-tenant
    request
    (fn [tenant]
-     (let [form (ui-req/parse-form request)
-           id (path-id request)]
-       (disputes/assign! (:tenant/id tenant)
-                         id
-                         {:user-id (ui-req/uuid-value (:user-id form))}
-                         (actor tenant))
-       (redirect (str "/disputes/" id))))))
+     (csrf/with-form
+       request
+       (fn [form]
+         (let [id (path-id request)]
+           (disputes/assign! (:tenant/id tenant)
+                             id
+                             {:user-id (ui-req/uuid-value (:user-id form))}
+                             (actor tenant))
+           (redirect (str "/disputes/" id))))))))
 
 (defn transition-dispute [request]
   (require-tenant
    request
    (fn [tenant]
-     (let [form (ui-req/parse-form request)
-           id (path-id request)]
-       (disputes/transition! (:tenant/id tenant)
-                             id
-                             {:to (ui-req/keyword-value (:to-status form))}
-                             (actor tenant))
-       (redirect (str "/disputes/" id))))))
+     (csrf/with-form
+       request
+       (fn [form]
+         (let [id (path-id request)]
+           (disputes/transition! (:tenant/id tenant)
+                                 id
+                                 {:to (ui-req/keyword-value (:to-status form))}
+                                 (actor tenant))
+           (redirect (str "/disputes/" id))))))))
 
 (defn comment-dispute [request]
   (require-tenant
    request
    (fn [tenant]
-     (let [form (ui-req/parse-form request)
-           id (path-id request)]
-       (disputes/comment! (:tenant/id tenant)
-                          id
-                          {:body (:body form)}
-                          (actor tenant))
-       (redirect (str "/disputes/" id))))))
+     (csrf/with-form
+       request
+       (fn [form]
+         (let [id (path-id request)]
+           (disputes/comment! (:tenant/id tenant)
+                              id
+                              {:body (:body form)}
+                              (actor tenant))
+           (redirect (str "/disputes/" id))))))))
 
 (defn- observed-at [form]
   (let [value (:observed-at form)
@@ -151,22 +159,24 @@
   (require-tenant
    request
    (fn [tenant]
-     (let [form (ui-req/parse-form request)
-           id (path-id request)
-           exception (exceptions/create-manual!
-                      {:tenant-id (:tenant/id tenant)
-                       :source-ref (:source-ref form)
-                       :kind (ui-req/keyword-value (:kind form))
-                       :currency (:currency form)
-                       :observed-at (observed-at form)
-                       :monetary-impact-cents
-                       (ui-req/long-value (:monetary-impact-cents form))}
-                      (actor tenant))]
-       (exceptions/attach-to-dispute!
-        (:tenant/id tenant)
-        {:exception-id (:exception/id exception) :dispute-id id}
-        (actor tenant))
-       (redirect (str "/disputes/" id))))))
+     (csrf/with-form
+       request
+       (fn [form]
+         (let [id (path-id request)
+               exception (exceptions/create-manual!
+                          {:tenant-id (:tenant/id tenant)
+                           :source-ref (:source-ref form)
+                           :kind (ui-req/keyword-value (:kind form))
+                           :currency (:currency form)
+                           :observed-at (observed-at form)
+                           :monetary-impact-cents
+                           (ui-req/long-value (:monetary-impact-cents form))}
+                          (actor tenant))]
+           (exceptions/attach-to-dispute!
+            (:tenant/id tenant)
+            {:exception-id (:exception/id exception) :dispute-id id}
+            (actor tenant))
+           (redirect (str "/disputes/" id))))))))
 
 (defn counterparties-list [request]
   (require-tenant
@@ -189,49 +199,19 @@
   (require-tenant
    request
    (fn [tenant]
-     (correlations/accept! (:tenant/id tenant) (path-id request) (actor tenant))
-     (redirect "/correlations"))))
+     (csrf/with-form
+       request
+       (fn [_form]
+         (correlations/accept! (:tenant/id tenant) (path-id request) (actor tenant))
+         (redirect "/correlations"))))))
 
 (defn reject-correlation [request]
   (require-tenant
    request
    (fn [tenant]
-     (correlations/reject! (:tenant/id tenant) (path-id request) (actor tenant))
-     (redirect "/correlations"))))
+     (csrf/with-form
+       request
+       (fn [_form]
+         (correlations/reject! (:tenant/id tenant) (path-id request) (actor tenant))
+         (redirect "/correlations"))))))
 
-(defn ingestion-settings [cfg]
-  (fn [request]
-    (require-tenant
-     request
-     (fn [tenant]
-       (html (pages/ingestion-settings-page (:tenant/id tenant) cfg))))))
-
-(defn- ingestion-settings-attrs [form]
-  {:enabled? (= "true" (:is-enabled form))
-   :base-url (:base-url form)
-   :poll-interval-seconds (ui-req/long-value
-                           (:poll-interval-seconds form))})
-
-(defn save-ingestion-settings [cfg]
-  (fn [request]
-    (require-tenant
-     request
-     (fn [tenant]
-       (let [form (ui-req/parse-form request)]
-         (ingestion/save-settings-by-system!
-          (:tenant/id tenant)
-          (ui-req/keyword-value (:source-system form))
-          (ingestion-settings-attrs form)
-          (registry/with-source-registry cfg))
-         (redirect "/settings/ingestion"))))))
-
-(defn pull-ingestion-now [cfg]
-  (fn [request]
-    (require-tenant
-     request
-     (fn [tenant]
-       (ingestion/pull-now!
-        (:tenant/id tenant)
-        (path-id request)
-        (registry/with-source-registry cfg))
-       (redirect "/settings/ingestion")))))

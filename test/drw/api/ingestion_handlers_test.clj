@@ -51,7 +51,7 @@
         id (source-id tenant-a)
         updated ((api-ingestion/save-source-handler cfg)
                  (req tenant-a
-                      "{\"source_system\":\"invoice-recon\",\"is_enabled\":false,\"base_url\":\"https://tenant.example\",\"poll_interval_seconds\":120}"
+                      "{\"source_system\":\"invoice-recon\",\"is_enabled\":false,\"base_url\":\"https://invoice.example.invalid\",\"poll_interval_seconds\":120}"
                       nil nil))
         disabled-run ((api-ingestion/pull-now-handler cfg)
                       (req tenant-a nil {:id id} nil))
@@ -80,6 +80,10 @@
   (let [id (source-id tenant-a)
         cross ((api-ingestion/pull-now-handler cfg)
                (req tenant-b nil {:id id} nil))
+        private-url ((api-ingestion/save-source-handler cfg)
+                     (req tenant-a
+                          "{\"source_system\":\"invoice-recon\",\"base_url\":\"http://127.0.0.1:8080\"}"
+                          nil nil))
         bad-source ((api-ingestion/save-source-handler cfg)
                     (req tenant-a
                          "{\"source_system\":\"unknown\"}"
@@ -88,5 +92,6 @@
                 (req tenant-a nil {:id "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"}
                      nil))]
     (is (= 404 (:status cross)))
+    (is (= 400 (:status private-url)))
     (is (= 400 (:status bad-source)))
     (is (= 404 (:status bad-id)))))

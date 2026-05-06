@@ -7,6 +7,12 @@
             [drw.security.hmac :as hmac]
             [drw.tenants.store :as tenants]))
 
+(def replay-window-seconds 300)
+(defonce hub-deliveries* (atom #{}))
+
+(defn reset-hub-deliveries! []
+  (reset! hub-deliveries* #{}))
+
 (defn- create-attrs [tenant-id body]
   {:tenant-id tenant-id
    :dispute-id (some-> (api/value body :dispute_id :disputeId) api/uuid-value)
@@ -66,6 +72,44 @@
 (defn- tenant-error [status code message]
   (responses/error-response status code message))
 
+(defn- now-epoch-seconds [cfg]
+  (quot (or (:hub-now-ms cfg) (System/currentTimeMillis)) 1000))
+
+(defn- long-value [value]
+  (try
+    (Long/parseLong (str value))
+    (catch NumberFormatException _ nil)))
+
+(defn- validate-hub-replay-headers [request cfg]
+  (let [timestamp (header request "X-Hub-Timestamp")
+        delivery-id (header request "X-Hub-Delivery-Id")
+        epoch (long-value timestamp)
+        skew (when epoch (Math/abs (- (now-epoch-seconds cfg) epoch)))]
+    (cond
+      (str/blank? timestamp)
+      {:error (tenant-error 400 "HUB_TIMESTAMP_REQUIRED"
+                            "X-Hub-Timestamp is required")}
+      (str/blank? delivery-id)
+      {:error (tenant-error 400 "HUB_DELIVERY_ID_REQUIRED"
+                            "X-Hub-Delivery-Id is required")}
+      (or (nil? epoch) (> skew replay-window-seconds))
+      {:error (tenant-error 401 "HUB_TIMESTAMP_INVALID"
+                            "X-Hub-Timestamp is outside the replay window")}
+      :else
+      {:timestamp timestamp :delivery-id delivery-id})))
+
+(defn- delivery-key [tenant-id delivery-id]
+  [tenant-id delivery-id])
+
+(defn- duplicate-delivery? [tenant-id delivery-id]
+  (contains? @hub-deliveries* (delivery-key tenant-id delivery-id)))
+
+(defn- remember-delivery! [tenant-id delivery-id]
+  (swap! hub-deliveries* conj (delivery-key tenant-id delivery-id)))
+
+(defn- duplicate-delivery-response [delivery-id]
+  (api/ok {:status "duplicate" :deliveryId delivery-id}))
+
 (defn- resolve-hub-tenant [request]
   (let [slug (header request "X-Hub-Tenant-Slug")]
     (cond
@@ -106,22 +150,33 @@
   (fn [request]
     (let [body-text (raw-body request)
           signature (header request "X-Hub-Signature-256")
+          {timestamp :timestamp delivery-id :delivery-id replay-response :error}
+          (validate-hub-replay-headers request cfg)
           secret (:hub-ingress-secret cfg)]
       (cond
+        replay-response replay-response
         (str/blank? signature)
         (hmac-error "HUB_SIGNATURE_REQUIRED"
                     "X-Hub-Signature-256 is required")
-        (not (hmac/valid-signature? secret body-text signature))
+        (not (hmac/valid-signature?
+              secret
+              (hmac/signed-message timestamp delivery-id body-text)
+              signature))
         (hmac-error "HUB_SIGNATURE_INVALID"
                     "X-Hub-Signature-256 is invalid")
-        :else
-        (let [{tenant :tenant tenant-response :error} (resolve-hub-tenant request)
-              {payload :body payload-response :error} (parse-hub-body body-text)]
-          (or tenant-response
-              payload-response
-              (api/with-domain-errors
-                (ingest-response
-                 (exceptions/ingest!
-                  (hub-attrs (:tenant/id tenant) payload)
-                  {:actor-kind :hub
-                   :actor-id "notification-hub"})))))))))
+        :else (let [{tenant :tenant tenant-response :error}
+                    (resolve-hub-tenant request)
+                    {payload :body payload-response :error}
+                    (parse-hub-body body-text)]
+                (or tenant-response
+                    payload-response
+                    (when (duplicate-delivery? (:tenant/id tenant) delivery-id)
+                      (duplicate-delivery-response delivery-id))
+                    (api/with-domain-errors
+                      (let [response (ingest-response
+                                      (exceptions/ingest!
+                                       (hub-attrs (:tenant/id tenant) payload)
+                                       {:actor-kind :hub
+                                        :actor-id "notification-hub"}))]
+                        (remember-delivery! (:tenant/id tenant) delivery-id)
+                        response))))))))
