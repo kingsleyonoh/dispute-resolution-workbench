@@ -50,7 +50,7 @@ Tenant-scoped dispute operations system for finance teams: manual exceptions, di
 | `src/drw/system.clj` | Datomic Local, SQL storage, Postgres, and Redis smoke helpers |
 | `src/drw/setup.clj` | Structured first-run setup checks and setup CLI |
 | `src/drw/db/` | Schema loading, status validation, setup summaries, and tenant scope |
-| `src/drw/domain/` | Process-local counterparties, disputes, exceptions, ingestion source controls/runs, correlation review, resolution orchestration, reports, timeline, and audit |
+| `src/drw/domain/` | Process-local counterparties, disputes, exceptions, ingestion/playbook controls, correlation review, resolution, reports, timeline, and audit |
 | `src/drw/jobs/` | Offline jobs for SLA reaping plus adapter/NATS ingestion through the domain pipeline |
 | `src/drw/fixtures.clj` | Tenant fixture loader with identity-field validation |
 | `src/drw/tenants/` | Tenant identity snapshots for config-driven surfaces |
@@ -90,18 +90,18 @@ See `.env.example`. Required keys: `APP_ENV`, `PORT`, `DATABASE_URL`, `DATOMIC_U
 ## HTTP Surface
 | Surface | Routes | Purpose |
 |---|---|---|
-| UI pages | `GET /`, `/login`, `/disputes`, `/disputes/:id`, `/counterparties`, `/counterparties/:id`, `/correlations`, `/settings/ingestion` | Server-rendered tenant console pages |
+| UI pages | `GET /`, `/login`, `/disputes`, `/counterparties`, `/correlations`, `/settings/{ingestion,playbooks}` | Server-rendered tenant console pages |
 | UI form actions | `POST /login`, `/logout`, dispute actions, correlation decisions, ingestion source save/pull-now | Login and operator actions using POST/303 redirects |
 | Health API | `GET /api/health` | JSON liveness check |
 | Tenant API | `/api/tenants/register`, `/api/tenants/me`, `/tenants/me`, `/api/tenants/rotate-key` | Registration, profile, compatibility profile, and key rotation |
-| Workbench API | `/api/disputes*`, `/api/exceptions`, `/api/correlations*`, `/api/ingestion-*`, `/api/counterparties*` | JSON dispute, exception, correlation, ingestion source/run, and counterparty operations documented in `openapi.yaml` |
+| Workbench API | `/api/{disputes,exceptions,correlations,ingestion-*,counterparties,playbooks}` | JSON workbench operations documented in `openapi.yaml` |
 | Public ingress API | `POST /api/exceptions/from-hub` | Hub-routed exception ingestion using `X-Hub-Signature-256` HMAC and `X-Hub-Tenant-Slug` |
 
 ## Tenant Model
 API requests use `X-API-Key` prefix lookup and constant-time hash comparison. Public routes are explicit in `drw.http.interceptors.auth/public-routes`; Hub ingress resolves tenant by `X-Hub-Tenant-Slug` after HMAC verification. Protected API routes require `:current-tenant`, rate limits use route keys, request ids propagate through `X-Request-Id`, and tenant lifecycle mutations append audit rows. UI requests resolve tenant context from `drw_session`, `X-DRW-Session`, or `X-API-Key`. Cross-tenant misses return 404.
 
 ## Data Contracts
-Tenant fixtures use at least two distinct tenants. Tenant snapshots fail closed, templates use strict undefined lookup, and audit rows are append-only maps. Domain state is process-local until durable Datomic mutations are wired. Reports fail closed on cross-tenant dispute ids; SLA breach claims are idempotent. Correlator scoring is pure, tenant-scoped, threshold-banded, and deterministic. Ingestion stores normalized exceptions, creates unmatched disputes, records pending candidates, and auto-merges only when configured. Ingestion source overrides, pull-now history, and correlation review decisions are tenant-scoped. Adapter fetches are disabled-safe, tenant/source scoped, retryable, timeout-classified, and circuit-isolated. Invoice, transaction, Contract Lifecycle, Webhook Engine, and HMAC Hub ingress normalize upstream exceptions through ingestion and reject same-tenant duplicate source refs. Adapter integration coverage includes a real nginx Testcontainers upstream stub. Resolution polling applies Workflow Engine terminal status.
+Tenant fixtures use at least two distinct tenants. Snapshots fail closed, templates use strict lookup, and audit rows are append-only. Domain state is process-local until durable Datomic mutations are wired. Reports fail closed on cross-tenant dispute ids; SLA breach claims are idempotent. Correlator scoring is pure, tenant-scoped, threshold-banded, and deterministic. Ingestion stores normalized exceptions, creates unmatched disputes, records pending candidates, and auto-merges only when configured. Ingestion overrides, pull-now history, playbooks, and correlation decisions are tenant-scoped. Adapter fetches are disabled-safe, tenant/source scoped, retryable, timeout-classified, and circuit-isolated. Hub/adapter ingress rejects same-tenant duplicate source refs. Adapter integration coverage includes a real nginx Testcontainers upstream stub. Resolution polling applies Workflow Engine terminal status.
 
 ## Deep References
 | Area | Planned path |
