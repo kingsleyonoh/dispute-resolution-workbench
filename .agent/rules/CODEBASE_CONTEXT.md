@@ -17,7 +17,7 @@ Tenant-scoped finance dispute operations system: exceptions, queues, SLA trackin
 | SQL access | next.jdbc |
 | UI | Hiccup 2, HTMX 2.0.4, Tailwind CSS 3.4 |
 | Auth | X-API-Key tenant interceptor; UI session auth planned; metrics Basic auth when configured |
-| Tests | clojure.test, Kaocha, Testcontainers including nginx upstream stubs, Playwright via clj-chrome-devtools |
+| Tests | clojure.test, Kaocha, Testcontainers nginx stubs, local full-flow E2E, Playwright via clj-chrome-devtools |
 | Jobs | core.async and Carmine-backed scheduler |
 | Deploy | No active production deployment planned |
 | Observability | Local readiness, metrics, JSON logs, injectable Sentry boundary |

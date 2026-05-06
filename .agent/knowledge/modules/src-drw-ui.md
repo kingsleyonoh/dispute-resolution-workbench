@@ -28,6 +28,7 @@ Defines the server-rendered Hiccup/Tailwind operator console: login, bounded das
 - `test/drw/e2e_api/ui_flow_test.clj` - real HTTP operator flow through login, create, assign, transition, comment, attach exception, counterparty pages, correlation review, and ingestion settings.
 - `test/drw/e2e_api/ui_playbooks_flow_test.clj` - real HTTP Playbooks settings add/disable flow.
 - `test/drw/e2e_api/ui_start_resolution_flow_test.clj` - real HTTP dispute-detail start-resolution form flow.
+- `test/drw/e2e_api/full_flow_test.clj` - local end-to-end flow across adapter ingestion, dispute resolution, Hub event capture, and PDF generation.
 
 ## Dependencies
 
@@ -40,6 +41,7 @@ Defines the server-rendered Hiccup/Tailwind operator console: login, bounded das
 - `test/drw/ui/pages_test.clj` verifies rendered page surfaces, bounded 10k dashboard behavior, and dispute/counterparty/correlation/ingestion actions.
 - `test/drw/e2e_api/health_test.clj` verifies root HTML over real HTTP.
 - `test/drw/e2e_api/ui_flow_test.clj` verifies the first tenant operator flow, correlation acceptance, and ingestion settings/pull-now over a running Pedestal server. `ui_playbooks_flow_test.clj` verifies Playbooks settings over real HTTP.
+- `test/drw/e2e_api/full_flow_test.clj` verifies the complete local adapter -> dispute -> notification -> resolution -> PDF workflow.
 
 ## Notes
 
