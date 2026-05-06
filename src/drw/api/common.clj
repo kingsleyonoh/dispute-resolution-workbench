@@ -1,6 +1,6 @@
 (ns drw.api.common
   (:require [clojure.string :as str]
-            [drw.http.json :as json])
+            [drw.api.responses :as responses])
   (:import [java.time Instant]
            [java.util Date UUID]))
 
@@ -54,26 +54,26 @@
     (keyword (str/replace (str value) "_" "-"))))
 
 (defn ok [body]
-  (json/response 200 body))
+  (responses/response 200 body))
 
 (defn created [body]
-  (json/response 201 body))
+  (responses/response 201 body))
 
 (defn not-found [message]
-  (json/error-response 404 "NOT_FOUND" message))
+  (responses/error-response 404 "NOT_FOUND" message))
 
 (defn validation-error [field issue]
-  (json/error-response 400 "VALIDATION_ERROR" "Request validation failed"
-                       [{:path (name field) :issue issue}]))
+  (responses/error-response 400 "VALIDATION_ERROR" "Request validation failed"
+                            [{:path (name field) :issue issue}]))
 
 (defn conflict [message]
-  (json/error-response 409 "CONFLICT" message))
+  (responses/error-response 409 "CONFLICT" message))
 
 (defn illegal-transition [message]
-  (json/error-response 422 "ILLEGAL_STATUS_TRANSITION" message))
+  (responses/error-response 422 "ILLEGAL_STATUS_TRANSITION" message))
 
 (defn unprocessable [message]
-  (json/error-response 422 "VALIDATION_ERROR" message))
+  (responses/error-response 422 "VALIDATION_ERROR" message))
 
 (defn handle-domain-error [e]
   (let [{:keys [type field]} (ex-data e)
@@ -89,7 +89,8 @@
       :counterparty/duplicate-normalized-name (conflict message)
       :illegal-status-transition (illegal-transition message)
       :dispute/terminal (unprocessable message)
-      (json/error-response 500 "INTERNAL_ERROR" "Unexpected domain error"))))
+      (responses/error-response 500 "INTERNAL_ERROR"
+                                "Unexpected domain error"))))
 
 (defmacro with-domain-errors [& body]
   `(try

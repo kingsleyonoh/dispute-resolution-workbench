@@ -1,9 +1,9 @@
 (ns drw.api.exceptions
   (:require [clojure.string :as str]
             [drw.api.common :as api]
+            [drw.api.responses :as responses]
             [drw.api.serializers :as serializers]
             [drw.domain.exceptions :as exceptions]
-            [drw.http.json :as json]
             [drw.security.hmac :as hmac]
             [drw.tenants.store :as tenants]))
 
@@ -61,10 +61,10 @@
       :else (slurp body))))
 
 (defn- hmac-error [code message]
-  (json/error-response 401 code message))
+  (responses/error-response 401 code message))
 
 (defn- tenant-error [status code message]
-  (json/error-response status code message))
+  (responses/error-response status code message))
 
 (defn- resolve-hub-tenant [request]
   (let [slug (header request "X-Hub-Tenant-Slug")]
