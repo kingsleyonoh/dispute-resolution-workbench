@@ -196,4 +196,5 @@
                     :leaks leaks}))))
     {:status :ok
      :tenant-count (count tenants)
+     :checked-tenant-ids (mapv :tenant/id tenants)
      :rendered-kind report-kind}))

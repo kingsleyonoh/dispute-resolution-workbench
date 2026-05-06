@@ -132,3 +132,17 @@
                       tenants
                       (:tenant/id tenant-b)
                       (:dispute/id a-dispute)))))))
+
+(deftest two-tenant-render-check-reports-audited-tenants
+  (let [result (reports/two-tenant-pdf-render-check tenants)]
+    (is (= :ok (:status result)))
+    (is (= (set (map :tenant/id tenants))
+           (set (:checked-tenant-ids result))))))
+
+(deftest two-tenant-render-check-rejects-cross-tenant-literals
+  (let [leaky-tenant-a (assoc tenant-a
+                              :tenant/address
+                              (:tenant/legal-name tenant-b))]
+    (is (= :report/tenant-identity-leak
+           (ex-type #(reports/two-tenant-pdf-render-check
+                      [leaky-tenant-a tenant-b]))))))
