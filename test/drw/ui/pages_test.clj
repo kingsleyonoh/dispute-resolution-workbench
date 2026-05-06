@@ -17,6 +17,10 @@
 (defn- html [node]
   (str (h/html node)))
 
+(defn- occurrences [text needle]
+  (count (re-seq (re-pattern (java.util.regex.Pattern/quote needle))
+                 text)))
+
 (defn- seed-dispute! []
   (state/reset-store!)
   (let [counterparty (counterparties/create!
@@ -61,6 +65,28 @@
     (is (str/includes? dashboard-html "Operations dashboard"))
     (is (str/includes? dashboard-html "UI invoice mismatch"))
     (is (str/includes? dashboard-html (str (:dispute/id dispute))))))
+
+(deftest dashboard-10k-fixture-renders-bounded-preview
+  (state/reset-store!)
+  (let [ids (repeatedly 10000 #(java.util.UUID/randomUUID))]
+    (reset! state/disputes*
+            (into {}
+                  (map-indexed
+                   (fn [idx id]
+                     [id {:dispute/id id
+                          :dispute/tenant-id tenant-id
+                          :dispute/reference (str "PERF-" idx)
+                          :dispute/title (str "Performance dispute " idx)
+                          :dispute/status :open
+                          :dispute/category :billing
+                          :dispute/severity :medium
+                          :dispute/monetary-impact-cents idx
+                          :dispute/currency "EUR"}])
+                   ids)))
+    (let [dashboard-html (html (pages/dashboard-page {:tenant-id tenant-id
+                                                      :tenant-name "Acme"}))]
+      (is (str/includes? dashboard-html "10000"))
+      (is (<= (occurrences dashboard-html "/disputes/") 50)))))
 
 (deftest renders-dispute-detail-actions-and-counterparty-directory
   (let [{:keys [counterparty dispute exception]} (seed-dispute!)

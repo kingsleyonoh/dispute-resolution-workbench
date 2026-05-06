@@ -3,6 +3,7 @@
             [drw.domain.disputes :as disputes]
             [drw.domain.exceptions :as exceptions]
             [drw.ui.correlations :as correlation-page]
+            [drw.ui.dashboard :as dashboard]
             [drw.ui.ingestion :as ingestion-page]
             [drw.ui.page-shell :as page-shell]
             [drw.ui.resolution :as resolution-page]
@@ -25,11 +26,6 @@
                :required true}]
       [:button {:class "w-full rounded bg-slate-950 px-4 py-2 text-white"}
        "Sign in"]]]]))
-
-(defn- metric [label value]
-  [:section {:class "rounded border border-slate-200 bg-white p-4"}
-   [:p {:class "text-xs font-medium uppercase text-slate-500"} label]
-   [:p {:class "mt-2 text-2xl font-semibold"} value]])
 
 (defn- dispute-row [dispute]
   [:tr {:class "border-t border-slate-100"}
@@ -54,27 +50,8 @@
      [:th {:class "pb-2 text-right"} "Impact"]]]
    (into [:tbody] (map dispute-row disputes))])
 
-(defn dashboard-page [{:keys [tenant-id tenant-name]}]
-  (let [items (disputes/list-by-tenant tenant-id)
-        open-count (count (remove #(#{:resolved :withdrawn}
-                                    (:dispute/status %))
-                                  items))
-        assigned-count (count (filter #(some? (:dispute/assigned-user-id %))
-                                      items))]
-    (page-shell/shell "Operations dashboard"
-                      [:p {:class "text-sm text-slate-600"} tenant-name]
-                      [:div {:class "grid gap-4 md:grid-cols-3"}
-                       (metric "Open disputes" open-count)
-                       (metric "Assigned" assigned-count)
-                       (metric "Counterparties"
-                               (count (counterparties/list-by-tenant tenant-id)))]
-                      [:section {:class "rounded border border-slate-200 bg-white p-5"}
-                       [:div {:class "mb-4 flex items-center justify-between"}
-                        [:h2 {:class "text-lg font-semibold"} "My open disputes"]
-                        [:a {:href "/disputes" :class "text-sm font-medium"} "View all"]]
-                       (if (seq items)
-                         (dispute-table items)
-                         [:p {:class "text-sm text-slate-500"} "No disputes yet."])])))
+(defn dashboard-page [context]
+  (dashboard/dashboard-page context))
 
 (defn- dispute-form [counterparties]
   [:section {:class "rounded border border-slate-200 bg-white p-5"}
