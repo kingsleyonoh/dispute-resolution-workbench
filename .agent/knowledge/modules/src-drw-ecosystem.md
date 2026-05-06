@@ -4,6 +4,8 @@
 
 Provides safe client boundaries for optional Notification Hub events, Workflow Engine executions, and dependency-light NATS messaging.
 
+Notification Hub production onboarding exists for Dispute Resolution Workbench: one tenant, eight email templates, eight static email routing rules, and an ignored `.env.local` API key. Do not commit the generated tenant key.
+
 ## Key files
 
 - `src/drw/ecosystem/hub_client.clj` - Notification Hub event normalization, config validation, and injected send hook.
@@ -20,6 +22,7 @@ Provides safe client boundaries for optional Notification Hub events, Workflow E
 ## Tests
 
 - Client tests verify disabled clients are side-effect-free, enabled clients fail loudly on missing config, injected send/client functions receive normalized request maps, and NATS operations delegate to injected client functions.
+- Batch 024 verified a live `dispute.created` test event through the Hub with notification status `sent`; tracked files intentionally store only redacted onboarding evidence.
 
 ## Cross-references
 
