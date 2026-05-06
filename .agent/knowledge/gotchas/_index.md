@@ -9,6 +9,7 @@
 | `EXAMPLE.md` | Template showing the expected shape - delete once a real gotcha exists. |
 | `2026-05-05-datomic-local-storage-dir.md` | Datomic Local client options require an absolute storage directory or `:mem`, not a relative path. |
 | `2026-05-05-ingestion-run-source-refs.md` | Ingestion run history must preserve upstream source refs from adapter results to keep pull-now outcomes inspectable. |
+| `2026-05-05-testcontainers-docker-socket.md` | Dockerized Testcontainers runs need host Docker socket access, Ryuk disabled, and a host override. |
 | `2026-05-05-wkhtmltopdf-alpine-package.md` | `wkhtmltopdf` is not available in the Alpine package index used by the Temurin 22 JRE Alpine image. |
 
 ## How to add a new gotcha

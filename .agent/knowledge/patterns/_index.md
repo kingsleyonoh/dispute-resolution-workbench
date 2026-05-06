@@ -7,6 +7,7 @@
 | File | Summary |
 |------|---------|
 | `001-operator-pull-now-reuses-scheduled-job.md` | Operator-triggered ingestion should call the same job path as scheduled polling and record a tenant-scoped run. |
+| `002-container-backed-upstream-adapter-tests.md` | Adapter poll jobs should use deterministic container-hosted HTTP stubs when request construction and ingestion need real boundary coverage. |
 | `EXAMPLE.md` | Template showing the expected shape — delete once a real pattern exists. |
 
 ## How to add a new pattern

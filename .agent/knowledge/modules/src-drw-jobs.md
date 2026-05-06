@@ -18,6 +18,7 @@ Owns offline jobs that run domain maintenance, adapter polling, and event ingest
 - `test/drw/jobs/reconciliation_poll_test.clj` - covers adapter poll storage, duplicate-source-ref skips including duplicates within one poll, disabled runs, upstream failure isolation across tenants/sources, tenant isolation, and source-system-scoped dedupe.
 - `test/drw/jobs/contract_lifecycle_test.clj` - covers Contract Lifecycle backfill, disabled/failure behavior, NATS subscription handling, duplicate skipping, tenant mismatch rejection, and cross-tenant source-ref isolation.
 - `test/drw/jobs/webhook_engine_dlq_poll_test.clj` - covers DLQ job storage, disabled/failure behavior, duplicate skipping, cursor preservation, and cross-tenant source-ref isolation.
+- `test/drw/integration/adapter_upstream_test.clj` - covers invoice reconciliation polling against a real nginx/Testcontainers upstream while still routing results through the production poll job and domain ingestion path.
 
 ## Dependencies
 
@@ -27,7 +28,7 @@ Owns offline jobs that run domain maintenance, adapter polling, and event ingest
 ## Tests
 
 - Domain SLA tests verify one breach per dispute/due-at pair, audit/timeline side effects, and ignored terminal disputes.
-- Reconciliation, contract, and Webhook Engine ingestion tests verify successful runs route through domain ingestion, failed upstream runs do not throw or store partial rows, disabled runs preserve cursors where applicable, duplicate source refs are skipped per tenant and source system, duplicate rows in the same poll do not create extra audit/correlation side effects, tenant-mismatched contract events reject, and Tenant A/Tenant B listings stay isolated.
+- Reconciliation, contract, Webhook Engine, and container-backed upstream ingestion tests verify successful runs route through domain ingestion, failed upstream runs do not throw or store partial rows, disabled runs preserve cursors where applicable, duplicate source refs are skipped per tenant and source system, duplicate rows in the same poll do not create extra audit/correlation side effects, tenant-mismatched contract events reject, HTTP request metadata is propagated, and Tenant A/Tenant B listings stay isolated.
 
 ## Cross-references
 

@@ -17,6 +17,7 @@ Defines the shared ingestion adapter boundary and current poll/event adapters fo
 - `test/drw/adapters/reconciliation_adapters_test.clj` - invoice and transaction adapter normalization, cursor, disabled, upstream failure, and webhook-unsupported contracts.
 - `test/drw/adapters/contract_lifecycle_test.clj` - Contract Lifecycle backfill normalization, cursor handling, disabled/upstream-failure behavior, webhook parsing, subject kind mapping, and tenant mismatch rejection.
 - `test/drw/adapters/webhook_engine_test.clj` - Webhook Engine DLQ normalization, cursor handling, disabled behavior, upstream failure, duplicate source-ref, and cross-tenant isolation contracts.
+- `test/drw/integration/adapter_upstream_test.clj` - container-backed invoice adapter poll integration using an nginx upstream stub and real Java HTTP requests.
 
 ## Dependencies
 
@@ -25,7 +26,7 @@ Defines the shared ingestion adapter boundary and current poll/event adapters fo
 
 ## Tests
 
-- Adapter tests verify disabled adapters do not call transport, enabled configs fail loudly when incomplete, retryable upstream failures can recover, timeout exceptions become structured failed results, explicit circuit state is isolated by `[tenant-id source-system]`, implicit default circuit state also keys by injected transport identity, and reconciliation/contract/Webhook payloads normalize to tenant-scoped exception maps.
+- Adapter tests verify disabled adapters do not call transport, enabled configs fail loudly when incomplete, retryable upstream failures can recover, timeout exceptions become structured failed results, explicit circuit state is isolated by `[tenant-id source-system]`, implicit default circuit state also keys by injected transport identity, reconciliation/contract/Webhook payloads normalize to tenant-scoped exception maps, and invoice polling can fetch from a real container-hosted HTTP upstream.
 
 ## Cross-references
 

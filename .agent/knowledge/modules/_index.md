@@ -22,6 +22,7 @@
 | `src-drw-http.md` | Pedestal service map, route table, JSON helpers, API interceptors, API routes, and UI route wiring. |
 | `src-drw-ui.md` | Hiccup/HTMX/Tailwind login, dashboard, dispute, exception, counterparty, correlation, and ingestion settings UI. |
 | `src-drw-core-setup.md` | App startup, structured first-run setup checks, Docker, and build entry points. |
+| `test-drw-test-containers.md` | Shared Testcontainers helpers for container-hosted integration infrastructure and nginx upstream stubs. |
 | `EXAMPLE.md` | Template showing the expected shape — delete once a real module exists. |
 
 ## How to add a new module
