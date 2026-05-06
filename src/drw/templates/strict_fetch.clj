@@ -18,10 +18,12 @@
                           {:type :strict-undefined
                            :token (token-name next-consumed)})))))))
 
-(defn missing-value-fn [path]
-  (throw (ex-info "Missing template token"
-                  {:type :strict-undefined
-                   :token (str path)})))
+(defn missing-value-fn
+  ([path] (missing-value-fn path nil))
+  ([path _context-map]
+   (throw (ex-info "Missing template token"
+                   {:type :strict-undefined
+                    :token (str path)}))))
 
 (def selmer-options
   {:missing-value-fn missing-value-fn})

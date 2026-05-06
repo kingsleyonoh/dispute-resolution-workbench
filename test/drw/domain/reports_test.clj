@@ -2,10 +2,12 @@
   (:require [clojure.string :as str]
             [clojure.test :refer [deftest is]]
             [drw.domain.disputes :as disputes]
+            [drw.domain.exceptions :as exceptions]
             [drw.domain.reports :as reports]
             [drw.domain.state :as state]
             [drw.fixtures :as fixtures]
-            [drw.tenants.snapshot :as snapshot]))
+            [drw.tenants.snapshot :as snapshot])
+  (:import [java.nio.file Files]))
 
 (def tenants (fixtures/load-tenants))
 (def tenants-by-slug (fixtures/tenants-by-slug))
@@ -24,6 +26,25 @@
     :created-by :user
     :created-at #inst "2026-05-05T10:00:00.000-00:00"}
    actor))
+
+(defn- attach-exception! [tenant dispute]
+  (exceptions/create-manual!
+   {:tenant-id (:tenant/id tenant)
+    :source-system :manual
+    :source-ref (str "PDF-" (:dispute/reference dispute))
+    :kind :invoice-discrepancy
+    :entity-id "INV-PDF"
+    :counterparty-name "PDF Vendor"
+    :raw-payload {:description "Audit packet exception."}
+    :monetary-impact-cents 12500
+    :currency "EUR"
+    :observed-at #inst "2026-05-05T11:00:00.000-00:00"
+    :dispute-id (:dispute/id dispute)}
+   actor))
+
+(defn- temp-dir []
+  (str (Files/createTempDirectory "drw-report-test"
+                                  (make-array java.nio.file.attribute.FileAttribute 0))))
 
 (defn- ex-type [f]
   (try
@@ -50,6 +71,58 @@
     (doseq [literal (snapshot/tenant-identity-literals tenant-a)]
       (is (not (str/includes? (:html b-artifact) literal))
           (str "TENANT_IDENTITY_LEAK: Tenant B render included " literal)))))
+
+(deftest dispute-audit-html-uses-template-data
+  (state/reset-store!)
+  (let [dispute (seed-dispute! tenant-a "Template backed audit")
+        _ (attach-exception! tenant-a dispute)
+        _ (disputes/comment! (:tenant/id tenant-a) (:dispute/id dispute)
+                             {:body "Operator note."} actor)
+        artifact (reports/render-dispute-audit-pdf-source
+                  tenants (:tenant/id tenant-a) (:dispute/id dispute))
+        html (:html artifact)]
+    (is (str/includes? html "data-template=\"dispute-audit\""))
+    (is (str/includes? html "Template backed audit"))
+    (is (str/includes? html "Audit packet exception."))
+    (is (str/includes? html "Operator note."))
+    (is (str/includes? html (:tenant/brand-primary-hex tenant-a)))))
+
+(deftest generate-dispute-audit-pdf-stores-ready-artifact
+  (state/reset-store!)
+  (let [dispute (seed-dispute! tenant-a "Frozen tenant report")
+        storage-dir (temp-dir)
+        report (reports/generate-dispute-audit-pdf!
+                {:report-storage-dir storage-dir
+                 :pdf-render-fn (fn [{:keys [html]}]
+                                  (.getBytes (str "PDF:" html) "UTF-8"))}
+                tenants
+                (:tenant/id tenant-a)
+                (:dispute/id dispute)
+                actor)]
+    (is (= :ready (:report/status report)))
+    (is (= :dispute-audit-pdf (:report/kind report)))
+    (is (= 64 (count (:report/content-sha256 report))))
+    (is (str/includes? (:report/tenant-snapshot report)
+                       (:tenant/legal-name tenant-a)))
+    (is (.exists (java.io.File. (:report/storage-path report))))
+    (is (= report (reports/get-report (:tenant/id tenant-a)
+                                      (:report/id report))))))
+
+(deftest failed-pdf-render-stores-failed-artifact
+  (state/reset-store!)
+  (let [dispute (seed-dispute! tenant-a "Failed report")
+        report (reports/generate-dispute-audit-pdf!
+                {:report-storage-dir (temp-dir)
+                 :pdf-render-fn (fn [_]
+                                  (throw (ex-info "wkhtmltopdf failed"
+                                                  {:exit 1})))}
+                tenants
+                (:tenant/id tenant-a)
+                (:dispute/id dispute)
+                actor)]
+    (is (= :failed (:report/status report)))
+    (is (str/includes? (:report/error report) "wkhtmltopdf failed"))
+    (is (nil? (:report/storage-path report)))))
 
 (deftest dispute-audit-pdf-source-fails-closed-for-cross-tenant-dispute
   (state/reset-store!)
