@@ -31,6 +31,9 @@
 (defn- page-chain [handler]
   [(request-id/interceptor) handler])
 
+(defn- metrics-chain [handler]
+  [(request-id/interceptor) handler])
+
 (defn- ui-routes [cfg]
   #{["/" :get (page-chain ui/home) :route-name :home]
     ["/login" :get (page-chain ui/login) :route-name :login]
@@ -93,6 +96,12 @@
 
 (defn- tenant-routes [cfg]
   #{["/api/health" :get (api-chain cfg handlers/health) :route-name :health]
+    ["/api/health/ready" :get
+     (api-chain cfg (partial handlers/ready cfg))
+     :route-name :health-ready]
+    ["/metrics" :get
+     (metrics-chain (partial handlers/metrics cfg))
+     :route-name :metrics]
     ["/api/tenants/register" :post
      (api-chain cfg (tenants/register-handler cfg))
      :route-name :tenant-register]

@@ -37,6 +37,12 @@
         "resources/datomic/sql-transactor.properties")
    :redis-url (get env "REDIS_URL")
    :session-secret (get env "SESSION_SECRET")
+   :sentry-dsn (get env "SENTRY_DSN")
+   :axiom-token (get env "AXIOM_TOKEN")
+   :axiom-dataset (get env "AXIOM_DATASET" "drw-logs")
+   :prometheus-enabled (not= "false" (get env "PROMETHEUS_ENABLED" "true"))
+   :metrics-basic-auth-user (get env "METRICS_BASIC_AUTH_USER" "metrics")
+   :metrics-basic-auth-pass (get env "METRICS_BASIC_AUTH_PASS")
    :self-registration-enabled (not= "false" (get env "SELF_REGISTRATION_ENABLED"
                                                  "true"))
    :api-key-prefix (get env "API_KEY_PREFIX" "drw_live_")})

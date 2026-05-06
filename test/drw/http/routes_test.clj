@@ -8,6 +8,9 @@
                                     [name {:path path :method method}]))
                              (routes/routes))]
     (is (= {:path "/api/health" :method :get} (:health routes-by-name)))
+    (is (= {:path "/api/health/ready" :method :get}
+           (:health-ready routes-by-name)))
+    (is (= {:path "/metrics" :method :get} (:metrics routes-by-name)))
     (is (= {:path "/" :method :get} (:home routes-by-name)))
     (is (= {:path "/login" :method :get} (:login routes-by-name)))
     (is (= {:path "/login" :method :post} (:login-submit routes-by-name)))
