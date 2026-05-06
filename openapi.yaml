@@ -1,119 +1,1145 @@
 openapi: 3.1.0
 info:
   title: Dispute Resolution Workbench API
-  version: 1.0.0
+  version: 0.1.0
 servers:
   - url: https://disputes.kingsleyonoh.com
+  - url: http://localhost:3049
 paths:
-  /api/tenants/register:
-    post:
-      summary: Register a tenant
+  /api/health:
+    get:
+      summary: Liveness health check
+      operationId: getHealth
       responses:
         "200":
-          description: Tenant and one-time API key
+          description: App is up
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                properties:
+                  status:
+                    type: string
+                    enum:
+                      - up
+  /api/tenants/register:
+    post:
+      summary: Register a tenant and issue its first API key
+      operationId: registerTenant
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                legal_name:
+                  type: string
+                legalName:
+                  type: string
+      responses:
+        "201":
+          description: Tenant registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TenantRegistration"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "403":
+          description: Self-registration is disabled
   /api/tenants/me:
     get:
-      summary: Read current tenant profile
+      summary: Read the authenticated tenant profile
+      operationId: getTenantProfile
       security:
         - ApiKeyAuth: []
       responses:
         "200":
           description: Tenant profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TenantProfile"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: Tenant not found
+  /tenants/me:
+    get:
+      summary: Read the authenticated tenant profile through compatibility path
+      operationId: getTenantProfileCompat
+      security:
+        - ApiKeyAuth: []
+      responses:
+        "200":
+          description: Tenant profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TenantProfile"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: Tenant not found
+  /api/tenants/rotate-key:
+    post:
+      summary: Rotate the authenticated tenant API key
+      operationId: rotateTenantApiKey
+      security:
+        - ApiKeyAuth: []
+      responses:
+        "200":
+          description: New raw API key
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - apiKey
+                properties:
+                  apiKey:
+                    type: string
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: Tenant not found
   /api/disputes:
     get:
-      summary: List disputes
+      summary: List tenant-scoped disputes
+      operationId: listDisputes
       security:
         - ApiKeyAuth: []
       responses:
         "200":
-          description: Paginated disputes
+          description: Dispute page
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  disputes:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Dispute"
+                  nextCursor:
+                    type:
+                      - string
+                      - "null"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
     post:
-      summary: Create a dispute
+      summary: Create a manual dispute
+      operationId: createDispute
       security:
         - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DisputeCreate"
       responses:
-        "200":
+        "201":
           description: Created dispute
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dispute:
+                    $ref: "#/components/schemas/Dispute"
+        "400":
+          $ref: "#/components/responses/ValidationError"
   /api/disputes/{id}:
     get:
-      summary: Read dispute detail
+      summary: Read a dispute with exceptions and timeline
+      operationId: getDispute
       security:
         - ApiKeyAuth: []
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
+        - $ref: "#/components/parameters/Id"
       responses:
         "200":
-          description: Dispute with exceptions and timeline
+          description: Dispute detail
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: Dispute not found
   /api/disputes/{id}/assign:
     patch:
       summary: Assign a dispute
+      operationId: assignDispute
       security:
         - ApiKeyAuth: []
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - user_id
+              properties:
+                user_id:
+                  type: string
+                  format: uuid
       responses:
         "200":
-          description: Updated dispute
+          description: Assigned dispute
+        "422":
+          $ref: "#/components/responses/IllegalStatusTransition"
   /api/disputes/{id}/transition:
     patch:
-      summary: Transition dispute status
+      summary: Transition a dispute status
+      operationId: transitionDispute
       security:
         - ApiKeyAuth: []
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - to_status
+              properties:
+                to_status:
+                  $ref: "#/components/schemas/DisputeStatus"
       responses:
         "200":
-          description: Updated dispute
+          description: Transitioned dispute
+        "422":
+          $ref: "#/components/responses/IllegalStatusTransition"
+  /api/disputes/{id}/comments:
+    post:
+      summary: Append a dispute comment
+      operationId: commentOnDispute
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - body
+              properties:
+                body:
+                  type: string
+      responses:
+        "201":
+          description: Timeline entry created
+  /api/disputes/{id}/attach-exception:
+    post:
+      summary: Attach an exception to a dispute
+      operationId: attachExceptionToDispute
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - exception_id
+              properties:
+                exception_id:
+                  type: string
+                  format: uuid
+      responses:
+        "200":
+          description: Exception attached and dispute updated
+        "422":
+          description: Terminal disputes reject attachment
   /api/exceptions:
     get:
-      summary: List exceptions
+      summary: List tenant-scoped exceptions
+      operationId: listExceptions
       security:
         - ApiKeyAuth: []
       responses:
         "200":
-          description: Exceptions
+          description: Exception page
     post:
-      summary: Ingest a manual exception
+      summary: Create a manual exception
+      operationId: createException
       security:
         - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExceptionCreate"
       responses:
-        "200":
-          description: Exception and dispute decision
+        "201":
+          description: Exception created
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "409":
+          description: Duplicate source reference
   /api/exceptions/from-hub:
     post:
       summary: Ingest a Hub-routed exception event
+      operationId: ingestExceptionFromHub
+      security:
+        - HubSignature: []
+      parameters:
+        - name: X-Hub-Signature-256
+          in: header
+          required: true
+          schema:
+            type: string
+            pattern: "^sha256=[0-9a-f]{64}$"
+          description: HMAC-SHA256 over the raw request body.
+        - name: X-Hub-Tenant-Slug
+          in: header
+          required: true
+          schema:
+            type: string
+          description: Tenant slug for the Hub event destination.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HubExceptionIngest"
       responses:
-        "200":
-          description: Exception and dispute decision
+        "201":
+          description: Exception ingested through the domain pipeline
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          description: Missing or invalid Hub HMAC signature
+        "403":
+          description: Tenant is disabled
+        "404":
+          description: Tenant not found
+        "409":
+          description: Duplicate source reference
   /api/correlations:
     get:
-      summary: List correlation candidates
+      summary: List tenant-scoped correlation candidates
+      operationId: listCorrelations
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/CorrelationStatus"
+      responses:
+        "200":
+          description: Correlation candidate page
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  correlations:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/CorrelationDetail"
+                  nextCursor:
+                    type:
+                      - string
+                      - "null"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /api/correlations/{id}:
+    get:
+      summary: Read a correlation candidate
+      operationId: getCorrelation
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Correlation detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CorrelationDetail"
+        "404":
+          description: Correlation not found
+  /api/correlations/{id}/accept:
+    post:
+      summary: Accept a pending correlation and attach its exception
+      operationId: acceptCorrelation
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Correlation accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CorrelationDetail"
+        "404":
+          description: Correlation not found
+        "422":
+          $ref: "#/components/responses/IllegalStatusTransition"
+  /api/disputes/{id}/start-resolution:
+    post:
+      summary: Start a Workflow Engine resolution for a dispute
+      operationId: startDisputeResolution
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StartResolution"
+      responses:
+        "201":
+          description: Workflow execution started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  executionId:
+                    type: string
+                  workflowId:
+                    type: string
+                  dispute:
+                    $ref: "#/components/schemas/Dispute"
+        "404":
+          description: Dispute or playbook not found
+        "409":
+          description: Resolution already running
+          "422":
+            $ref: "#/components/responses/IllegalStatusTransition"
+  /api/disputes/{id}/audit-pdf:
+    get:
+      summary: Generate and download a dispute audit PDF
+      operationId: downloadDisputeAuditPdf
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: PDF audit artifact
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: Dispute not found
+        "500":
+          description: Report generation failed
+  /api/correlations/{id}/reject:
+    post:
+      summary: Reject a pending correlation without attaching its exception
+      operationId: rejectCorrelation
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Correlation rejected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CorrelationDetail"
+        "404":
+          description: Correlation not found
+        "422":
+          $ref: "#/components/responses/IllegalStatusTransition"
+  /api/ingestion-sources:
+    get:
+      summary: List tenant-scoped ingestion sources
+      operationId: listIngestionSources
       security:
         - ApiKeyAuth: []
       responses:
         "200":
-          description: Correlation candidates
-  /api/health:
-    get:
-      summary: Liveness health check
+          description: Ingestion source page
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sources:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/IngestionSource"
+                  nextCursor:
+                    type:
+                      - string
+                      - "null"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      summary: Save tenant-scoped ingestion source settings
+      operationId: saveIngestionSource
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IngestionSourceSave"
       responses:
         "200":
-          description: App is up
+          description: Updated ingestion source
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  source:
+                    $ref: "#/components/schemas/IngestionSource"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+  /api/ingestion-sources/{id}/pull-now:
+    post:
+      summary: Run an ingestion source pull immediately
+      operationId: pullIngestionSourceNow
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "201":
+          description: Ingestion run recorded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  run:
+                    $ref: "#/components/schemas/IngestionRun"
+        "404":
+          description: Ingestion source not found
+  /api/ingestion-runs:
+    get:
+      summary: List tenant-scoped ingestion runs
+      operationId: listIngestionRuns
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: source_system
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/IngestionRunStatus"
+      responses:
+        "200":
+          description: Ingestion run page
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  runs:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/IngestionRun"
+                  nextCursor:
+                    type:
+                      - string
+                      - "null"
+  /api/playbooks:
+    get:
+      summary: List tenant-scoped resolution playbooks
+      operationId: listPlaybooks
+      security:
+        - ApiKeyAuth: []
+      responses:
+        "200":
+          description: Playbook page
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  playbooks:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Playbook"
+                  nextCursor:
+                    type:
+                      - string
+                      - "null"
+    post:
+      summary: Create a tenant-scoped resolution playbook
+      operationId: createPlaybook
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlaybookSave"
+      responses:
+        "201":
+          description: Playbook created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  playbook:
+                    $ref: "#/components/schemas/Playbook"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "409":
+          description: Duplicate playbook code
+  /api/playbooks/{id}:
+    put:
+      summary: Update a tenant-scoped resolution playbook
+      operationId: updatePlaybook
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlaybookSave"
+      responses:
+        "200":
+          description: Playbook updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  playbook:
+                    $ref: "#/components/schemas/Playbook"
+        "404":
+          description: Playbook not found
+    delete:
+      summary: Disable a tenant-scoped resolution playbook
+      operationId: deletePlaybook
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Playbook disabled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  playbook:
+                    $ref: "#/components/schemas/Playbook"
+        "404":
+          description: Playbook not found
+  /api/counterparties:
+    get:
+      summary: List tenant-scoped counterparties
+      operationId: listCounterparties
+      security:
+        - ApiKeyAuth: []
+      responses:
+        "200":
+          description: Counterparty page
+  /api/counterparties/{id}:
+    get:
+      summary: Read a counterparty and dispute history
+      operationId: getCounterparty
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Counterparty detail
+        "404":
+          description: Counterparty not found
+  /api/counterparties/{id}/merge:
+    post:
+      summary: Merge one counterparty into another
+      operationId: mergeCounterparty
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - merge_into_id
+              properties:
+                merge_into_id:
+                  type: string
+                  format: uuid
+      responses:
+        "200":
+          description: Merge target counterparty
 components:
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
   securitySchemes:
     ApiKeyAuth:
       type: apiKey
       in: header
       name: X-API-Key
+    HubSignature:
+      type: apiKey
+      in: header
+      name: X-Hub-Signature-256
+  responses:
+    Unauthorized:
+      description: Missing or invalid API key
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    ValidationError:
+      description: Request validation failed
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    IllegalStatusTransition:
+      description: Illegal dispute status transition
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+  schemas:
+    DisputeStatus:
+      type: string
+      enum:
+        - open
+        - assigned
+        - investigating
+        - awaiting_counterparty
+        - awaiting_approval
+        - resolving
+        - resolved
+        - withdrawn
+    CorrelationStatus:
+      type: string
+      enum:
+        - pending
+        - accepted
+        - rejected
+        - auto-merged
+    IngestionRunStatus:
+      type: string
+      enum:
+        - succeeded
+        - failed
+        - disabled
+        - partial
+        - running
+    DisputeCreate:
+      type: object
+      required:
+        - title
+        - description
+        - category
+        - severity
+        - currency
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        severity:
+          type: string
+        currency:
+          type: string
+        counterparty_id:
+          type: string
+          format: uuid
+    Dispute:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        reference:
+          type: string
+        title:
+          type: string
+        status:
+          $ref: "#/components/schemas/DisputeStatus"
+        monetaryImpactCents:
+          type: integer
+        currency:
+          type: string
+        slaDueAt:
+          type:
+            - string
+            - "null"
+        workflowExecutionId:
+          type:
+            - string
+            - "null"
+        resolutionSummary:
+          type:
+            - string
+            - "null"
+    StartResolution:
+      type: object
+      required:
+        - playbook_id
+      properties:
+        playbook_id:
+          type: string
+          format: uuid
+        inputs_json:
+          type: string
+          description: JSON string for playbook inputs.
+    ExceptionCreate:
+      type: object
+      required:
+        - source_ref
+        - kind
+        - currency
+        - observed_at
+      properties:
+        source_ref:
+          type: string
+        source_system:
+          type: string
+          default: manual
+        kind:
+          type: string
+        currency:
+          type: string
+        observed_at:
+          type: string
+          format: date-time
+        monetary_impact_cents:
+          type: integer
+    HubExceptionIngest:
+      type: object
+      required:
+        - source_ref
+        - source_system
+        - kind
+        - currency
+        - observed_at
+      properties:
+        source_ref:
+          type: string
+        source_system:
+          type: string
+          enum:
+            - invoice-recon
+            - transaction-recon
+            - contract-lifecycle
+            - webhook-engine
+        kind:
+          type: string
+          enum:
+            - invoice-discrepancy
+            - contract-breach
+            - contract-conflict
+            - payment-mismatch
+            - delivery-failure
+        currency:
+          type: string
+        observed_at:
+          type: string
+          format: date-time
+        monetary_impact_cents:
+          type: integer
+        source_url:
+          type: string
+        raw_payload:
+          type: object
+    Exception:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        sourceRef:
+          type: string
+        sourceSystem:
+          type: string
+        disputeId:
+          type:
+            - string
+            - "null"
+    Correlation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        newExceptionId:
+          type: string
+          format: uuid
+        targetDisputeId:
+          type: string
+          format: uuid
+        score:
+          type: number
+          format: double
+        rationale:
+          type: string
+        status:
+          $ref: "#/components/schemas/CorrelationStatus"
+        decidedByUserId:
+          type:
+            - string
+            - "null"
+        decidedAt:
+          type:
+            - string
+            - "null"
+        createdAt:
+          type: string
+    CorrelationDetail:
+      type: object
+      properties:
+        correlation:
+          $ref: "#/components/schemas/Correlation"
+        exception:
+          $ref: "#/components/schemas/Exception"
+        targetDispute:
+          $ref: "#/components/schemas/Dispute"
+    IngestionSourceSave:
+      type: object
+      required:
+        - source_system
+      properties:
+        source_system:
+          type: string
+          enum:
+            - invoice-recon
+            - transaction-recon
+            - contract-lifecycle
+            - webhook-engine
+        is_enabled:
+          type: boolean
+        base_url:
+          type: string
+        poll_interval_seconds:
+          type: integer
+          minimum: 1
+    IngestionSource:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        sourceSystem:
+          type: string
+        displayName:
+          type: string
+        isEnabled:
+          type: boolean
+        config:
+          type: object
+          properties:
+            baseUrl:
+              type:
+                - string
+                - "null"
+            apiKeySecretRef:
+              type: string
+            pollIntervalSeconds:
+              type: integer
+            filters:
+              type: object
+        cursor:
+          type:
+            - string
+            - "null"
+        lastSuccessfulPullAt:
+          type:
+            - string
+            - "null"
+        lastError:
+          type:
+            - object
+            - "null"
+    IngestionRun:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        sourceSystem:
+          type: string
+        status:
+          $ref: "#/components/schemas/IngestionRunStatus"
+        exceptionsAttempted:
+          type: integer
+        exceptionsStored:
+          type: integer
+        exceptionsSkipped:
+          type: integer
+        exceptionsRejected:
+          type: integer
+        sourceRefs:
+          type: array
+          items:
+            type: string
+        startedAt:
+          type: string
+        finishedAt:
+          type: string
+        cursor:
+          type:
+            - string
+            - "null"
+        error:
+          type:
+            - object
+            - "null"
+    PlaybookSave:
+      type: object
+      properties:
+        code:
+          type: string
+        display_name:
+          type: string
+        description:
+          type: string
+        workflow_engine_workflow_id:
+          type: string
+        required_inputs_schema:
+          type: string
+        is_active:
+          type: boolean
+    Playbook:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        code:
+          type: string
+        displayName:
+          type: string
+        description:
+          type: string
+        workflowEngineWorkflowId:
+          type: string
+        requiredInputsSchema:
+          type: string
+        isActive:
+          type: boolean
+    Counterparty:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        canonicalName:
+          type: string
+        kind:
+          type: string
+    TenantRegistration:
+      type: object
+      required:
+        - id
+        - name
+        - slug
+        - apiKey
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        apiKey:
+          type: string
+    TenantProfile:
+      type: object
+      required:
+        - id
+        - name
+        - slug
+        - isActive
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        legalName:
+          type: string
+        displayName:
+          type: string
+        isActive:
+          type: boolean
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: object
+          required:
+            - code
+            - message
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              type: array
+              items:
+                type: object

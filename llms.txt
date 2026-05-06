@@ -6,13 +6,14 @@ Dispute Resolution Workbench is a Clojure/Pedestal operations console for financ
 CFOs, Heads of Finance Operations, supervisors, and operations analysts at B2B SaaS or manufacturing companies with multiple financial systems.
 
 ## Architecture
-- Clojure 1.12, Pedestal 0.7, Datomic Pro, PostgreSQL 16, Redis 7.
-- Server-rendered Hiccup + HTMX UI with Tailwind CSS.
-- API key and session authentication both resolve to a mandatory current tenant.
+- Clojure 1.12, Pedestal 0.7, Datomic Local smoke checks, Datomic Pro/PostgreSQL 16 storage config, Redis 7.
+- Server-rendered Hiccup + HTMX UI with Tailwind CSS for login, dashboard, dispute operations, manual exception attach, counterparty review, correlation review, and ingestion settings.
+- API-key authentication resolves protected API requests to a mandatory current tenant; public Hub exception ingress uses HMAC-SHA256 plus `X-Hub-Tenant-Slug`; UI requests resolve tenants from `drw_session`, `X-DRW-Session`, or `X-API-Key`.
 - External adapters are optional; manual disputes are the baseline product.
+- Current data contract includes `resources/datomic/schema.edn`, `resources/fixtures/tenants.edn`, tenant-scope helpers, tenant snapshots, strict template lookup, append-only audit transaction construction, in-memory tenant API-key/slug store, disabled-by-default ecosystem client stubs, dependency-light NATS boundary, shared exception adapter protocol/fetcher foundation, concrete Invoice/Transaction Reconciliation poll adapters/jobs, Contract Lifecycle REST backfill and NATS ingestion, Webhook Engine DLQ polling, HMAC Hub exception ingress, process-local domain stores for counterparties, disputes, exceptions, ingestion sources/runs, tenant-scoped correlator scoring and pending candidates, explicit correlation accept/reject decisions, ingestion that creates unmatched disputes or opt-in auto-merges high-confidence candidates, dispute audit PDF-source rendering, timeline, audit rows, and idempotent SLA breach claims.
 
 ## API Surface
-Primary routes include tenant registration/profile/key rotation, dispute CRUD and transitions, exception ingestion, correlations, counterparties, playbooks, SLA policies, ingestion sources/runs, audit log, health checks, and HTMX UI routes.
+Current wired JSON routes are `GET /api/health`, tenant lifecycle endpoints, dispute queue endpoints, manual exception endpoints, public `POST /api/exceptions/from-hub`, correlation list/detail/accept/reject endpoints, ingestion source/runs endpoints, and counterparty list/get/merge endpoints. Server-rendered UI routes cover `/`, `/login`, `/disputes`, dispute detail/actions, `/counterparties`, counterparty detail, `/correlations` with accept/reject actions, and `/settings/ingestion` with source save/pull-now actions. Resolution playbook and audit report APIs remain planned by the PRD but are not wired yet.
 
 ## Integrations
 Consumes from Invoice Reconciliation, Contract Lifecycle, Transaction Reconciliation, and optional Webhook Ingestion Engine. Emits to Notification Hub and triggers Workflow Automation Engine.
@@ -22,6 +23,8 @@ Consumes from Invoice Reconciliation, Contract Lifecycle, Transaction Reconcilia
 - Start infra: `docker compose up -d postgres redis`
 - Run app: `clojure -M:dev`
 - Test: `clojure -M:test`
+- E2E: `clojure -M:test:e2e`
+- CSS: `npm run build:css`
 
 ## Repository
 Private repo expected under `https://github.com/kingsleyonoh/dispute-resolution-workbench`.

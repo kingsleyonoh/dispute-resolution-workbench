@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="{{tenant.locale}}">
+  <head>
+    <meta charset="utf-8">
+    <title>Dispute audit {{dispute.reference}}</title>
+    <style>
+      body { font-family: Arial, sans-serif; color: #172033; margin: 32px; }
+      header { border-bottom: 4px solid {{tenant.brand-primary-hex}}; padding-bottom: 12px; }
+      h1, h2 { color: #172033; }
+      table { width: 100%; border-collapse: collapse; margin: 12px 0 24px; }
+      th, td { border: 1px solid #d8dee8; padding: 8px; text-align: left; vertical-align: top; }
+      th { background: #f4f6f9; }
+      .meta { color: #536174; }
+      .legal { margin-top: 32px; font-size: 12px; color: #536174; }
+    </style>
+  </head>
+  <body data-template="dispute-audit">
+    <header>
+      <img src="{{tenant.wordmark-url}}" alt="{{tenant.display-name}}" style="max-height:48px">
+      <h1>Dispute audit {{dispute.reference}}</h1>
+      <p class="meta">{{tenant.display-name}} | {{tenant.timezone}}</p>
+    </header>
+
+    <section>
+      <h2>Tenant identity</h2>
+      <table>
+        <tr><th>Legal name</th><td>{{tenant.legal-name}}</td></tr>
+        <tr><th>Full legal name</th><td>{{tenant.full-legal-name}}</td></tr>
+        <tr><th>Address</th><td>{{tenant.address}}</td></tr>
+        <tr><th>Registration</th><td>{{tenant.registration}}</td></tr>
+        <tr><th>Contact</th><td>{{tenant.contact}}</td></tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>Dispute</h2>
+      <table>
+        <tr><th>Title</th><td>{{dispute.title}}</td></tr>
+        <tr><th>Description</th><td>{{dispute.description}}</td></tr>
+        <tr><th>Status</th><td>{{dispute.status}}</td></tr>
+        <tr><th>Category</th><td>{{dispute.category}}</td></tr>
+        <tr><th>Severity</th><td>{{dispute.severity}}</td></tr>
+        <tr><th>Currency</th><td>{{dispute.currency}}</td></tr>
+        <tr><th>Resolution summary</th><td>{{dispute.resolution-summary}}</td></tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>Exceptions</h2>
+      <table>
+        <thead>
+          <tr><th>Source</th><th>Reference</th><th>Description</th><th>Impact</th></tr>
+        </thead>
+        <tbody>
+          {% for exception in exceptions %}
+          <tr>
+            <td>{{exception.source-system}}</td>
+            <td>{{exception.source-ref}}</td>
+            <td>{{exception.description}}</td>
+            <td>{{exception.monetary-impact-cents}} {{exception.currency}}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Timeline</h2>
+      <table>
+        <thead>
+          <tr><th>When</th><th>Kind</th><th>Body</th></tr>
+        </thead>
+        <tbody>
+          {% for entry in timeline %}
+          <tr>
+            <td>{{entry.occurred-at}}</td>
+            <td>{{entry.kind}}</td>
+            <td>{{entry.body}}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Audit log</h2>
+      <table>
+        <thead>
+          <tr><th>When</th><th>Action</th><th>Actor</th></tr>
+        </thead>
+        <tbody>
+          {% for entry in audit-log %}
+          <tr>
+            <td>{{entry.occurred-at}}</td>
+            <td>{{entry.action}}</td>
+            <td>{{entry.actor-kind}} {{entry.actor-id}}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+
+    <footer class="legal">
+      {{tenant.full-legal-name}} | {{tenant.registration}} | {{tenant.contact}}
+    </footer>
+  </body>
+</html>

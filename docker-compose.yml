@@ -1,0 +1,62 @@
+services:
+  app:
+    build:
+      context: .
+      target: dev
+    profiles: ["app"]
+    command: ["clojure", "-M:dev"]
+    env_file:
+      - .env.local
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "3049:3049"
+    volumes:
+      - .:/app
+      - datomic-local:/app/storage/datomic-local
+    networks:
+      - internal
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: datomic_storage
+      POSTGRES_USER: drw
+      POSTGRES_PASSWORD: drw
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U drw -d datomic_storage"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - internal
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    volumes:
+      - redis-data:/data
+    networks:
+      - internal
+
+volumes:
+  postgres-data:
+  redis-data:
+  datomic-local:
+
+networks:
+  internal:

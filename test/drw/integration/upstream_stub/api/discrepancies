@@ -1,0 +1,8 @@
+{:discrepancies
+ [{:invoice_id "INV-TC-100"
+   :vendor_id "vendor-tc-7"
+   :source_url "https://invoice.example.test/INV-TC-100"
+   :discrepancy_amount_cents 4250
+   :currency "EUR"
+   :observed_at #inst "2026-05-05T10:15:00.000-00:00"}]
+ :next_cursor "container-cursor-2"}

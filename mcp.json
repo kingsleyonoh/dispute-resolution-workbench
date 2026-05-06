@@ -3,34 +3,160 @@
   "description": "Tenant-scoped dispute operations API for finance exceptions.",
   "tools": [
     {
+      "name": "get_health",
+      "description": "Read the app liveness status.",
+      "method": "GET",
+      "path": "/api/health"
+    },
+    {
+      "name": "register_tenant",
+      "description": "Register a tenant and return the first raw API key.",
+      "method": "POST",
+      "path": "/api/tenants/register"
+    },
+    {
+      "name": "get_tenant_profile",
+      "description": "Read the authenticated tenant profile.",
+      "method": "GET",
+      "path": "/api/tenants/me"
+    },
+    {
+      "name": "get_tenant_profile_compat",
+      "description": "Read the authenticated tenant profile through the compatibility path.",
+      "method": "GET",
+      "path": "/tenants/me"
+    },
+    {
+      "name": "rotate_tenant_api_key",
+      "description": "Rotate the authenticated tenant API key.",
+      "method": "POST",
+      "path": "/api/tenants/rotate-key"
+    },
+    {
       "name": "list_disputes",
-      "description": "List disputes for the authenticated tenant.",
+      "description": "List tenant-scoped disputes with optional queue filters.",
       "method": "GET",
       "path": "/api/disputes"
     },
     {
       "name": "create_dispute",
-      "description": "Create a manual dispute.",
+      "description": "Create a manual dispute for the authenticated tenant.",
       "method": "POST",
       "path": "/api/disputes"
     },
     {
-      "name": "read_dispute",
-      "description": "Read dispute detail with exceptions and timeline.",
+      "name": "get_dispute",
+      "description": "Read a dispute with attached exceptions and timeline.",
       "method": "GET",
       "path": "/api/disputes/{id}"
     },
     {
-      "name": "ingest_exception",
-      "description": "Ingest a manual exception and create or correlate a dispute.",
+      "name": "assign_dispute",
+      "description": "Assign a dispute to a user.",
+      "method": "PATCH",
+      "path": "/api/disputes/{id}/assign"
+    },
+    {
+      "name": "transition_dispute",
+      "description": "Move a dispute through a validated status transition.",
+      "method": "PATCH",
+      "path": "/api/disputes/{id}/transition"
+    },
+    {
+      "name": "comment_on_dispute",
+      "description": "Append a comment timeline row to a dispute.",
+      "method": "POST",
+      "path": "/api/disputes/{id}/comments"
+    },
+    {
+      "name": "attach_exception_to_dispute",
+      "description": "Attach an exception to a dispute.",
+      "method": "POST",
+      "path": "/api/disputes/{id}/attach-exception"
+    },
+    {
+      "name": "list_exceptions",
+      "description": "List tenant-scoped manual exceptions.",
+      "method": "GET",
+      "path": "/api/exceptions"
+    },
+    {
+      "name": "create_exception",
+      "description": "Create a manual exception.",
       "method": "POST",
       "path": "/api/exceptions"
     },
     {
+      "name": "ingest_exception_from_hub",
+      "description": "Ingest a Hub-routed exception event using HMAC-SHA256 signature verification.",
+      "method": "POST",
+      "path": "/api/exceptions/from-hub"
+    },
+    {
       "name": "list_correlations",
-      "description": "List pending correlation candidates.",
+      "description": "List tenant-scoped correlation candidates.",
       "method": "GET",
       "path": "/api/correlations"
+    },
+    {
+      "name": "get_correlation",
+      "description": "Read a correlation candidate with hydrated exception and target dispute details.",
+      "method": "GET",
+      "path": "/api/correlations/{id}"
+    },
+    {
+      "name": "accept_correlation",
+      "description": "Accept a pending correlation and attach its exception to the target dispute.",
+      "method": "POST",
+      "path": "/api/correlations/{id}/accept"
+    },
+    {
+      "name": "reject_correlation",
+      "description": "Reject a pending correlation without attaching its exception.",
+      "method": "POST",
+      "path": "/api/correlations/{id}/reject"
+    },
+    {
+      "name": "list_ingestion_sources",
+      "description": "List tenant-scoped ingestion source settings.",
+      "method": "GET",
+      "path": "/api/ingestion-sources"
+    },
+    {
+      "name": "save_ingestion_source",
+      "description": "Save tenant-scoped ingestion source settings.",
+      "method": "POST",
+      "path": "/api/ingestion-sources"
+    },
+    {
+      "name": "pull_ingestion_source_now",
+      "description": "Run an ingestion source pull immediately.",
+      "method": "POST",
+      "path": "/api/ingestion-sources/{id}/pull-now"
+    },
+    {
+      "name": "list_ingestion_runs",
+      "description": "List tenant-scoped ingestion run history.",
+      "method": "GET",
+      "path": "/api/ingestion-runs"
+    },
+    {
+      "name": "list_counterparties",
+      "description": "List tenant-scoped counterparties.",
+      "method": "GET",
+      "path": "/api/counterparties"
+    },
+    {
+      "name": "get_counterparty",
+      "description": "Read a counterparty with related disputes.",
+      "method": "GET",
+      "path": "/api/counterparties/{id}"
+    },
+    {
+      "name": "merge_counterparty",
+      "description": "Merge one counterparty into another.",
+      "method": "POST",
+      "path": "/api/counterparties/{id}/merge"
     }
   ]
 }

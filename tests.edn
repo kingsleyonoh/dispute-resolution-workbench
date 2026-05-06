@@ -1,0 +1,10 @@
+#kaocha/v1
+{:tests [{:id :unit
+          :test-paths ["test/drw"]
+          :skip-meta [:integration :e2e]}
+         {:id :integration
+          :test-paths ["test/drw/integration"]
+          :focus-meta [:integration]}
+         {:id :e2e
+          :test-paths ["test/drw/e2e_api" "test/drw/system"]
+          :focus-meta [:e2e]}]}
