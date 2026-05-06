@@ -1,47 +1,21 @@
 (ns drw.domain.exceptions
-  (:require [clojure.string :as str]
-            [drw.audit.recorder :as recorder]
+  (:require [drw.audit.recorder :as recorder]
             [drw.db.scope :as scope]
             [drw.domain.correlator :as correlator]
             [drw.domain.counterparties :as counterparties]
             [drw.domain.disputes :as disputes]
+            [drw.domain.exception-validation :as validation]
             [drw.domain.state :as state])
   (:import [java.time Instant]
            [java.util UUID]))
 
-(def valid-source-systems
-  #{:invoice-recon :contract-lifecycle :transaction-recon :webhook-engine :manual})
-
-(def valid-kinds
-  #{:invoice-discrepancy :contract-breach :contract-conflict
-    :payment-mismatch :delivery-failure :manual})
-
-(def default-ingestion-config
-  {:auto-merge-enabled false})
-
 (defn- now-date []
   (java.util.Date/from (Instant/now)))
-
-(defn- blank? [value]
-  (or (nil? value) (and (string? value) (str/blank? value))))
 
 (defn- reject! [message data]
   (throw (ex-info message data)))
 
 (declare attach-to-dispute!)
-
-(defn- require-create-fields! [attrs]
-  (doseq [field [:tenant-id :source-ref :kind :currency :observed-at]]
-    (when (blank? (get attrs field))
-      (reject! (str (name field) " is required")
-               {:type :validation-error :field field})))
-  (when-not (contains? valid-source-systems
-                       (or (:source-system attrs) :manual))
-    (reject! "source-system is invalid"
-             {:type :validation-error :field :source-system}))
-  (when-not (contains? valid-kinds (:kind attrs))
-    (reject! "kind is invalid"
-             {:type :validation-error :field :kind})))
 
 (defn list-by-tenant
   ([tenant-id] (list-by-tenant tenant-id {}))
@@ -90,7 +64,7 @@
 
 (defn create-manual! [attrs actor]
   (let [attrs (assoc attrs :source-system (or (:source-system attrs) :manual))]
-    (require-create-fields! attrs)
+    (validation/require-create-fields! attrs)
     (when (duplicate-source-ref? (:tenant-id attrs)
                                  (:source-system attrs)
                                  (:source-ref attrs))
@@ -238,7 +212,7 @@
 (defn ingest!
   ([attrs actor] (ingest! attrs actor {}))
   ([attrs actor opts]
-   (let [cfg (merge default-ingestion-config opts)
+   (let [cfg (merge validation/default-ingestion-config opts)
          exception (create-manual! (enrich-normalized attrs) actor)]
      (correlate-or-create! exception actor cfg))))
 

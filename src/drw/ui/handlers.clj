@@ -5,6 +5,7 @@
             [drw.domain.disputes :as disputes]
             [drw.domain.exceptions :as exceptions]
             [drw.domain.ingestion-sources :as ingestion]
+            [drw.jobs.ingestion-registry :as registry]
             [drw.tenants.store :as store]
             [drw.ui.pages :as pages]
             [drw.ui.request :as ui-req]
@@ -221,7 +222,7 @@
           (:tenant/id tenant)
           (ui-req/keyword-value (:source-system form))
           (ingestion-settings-attrs form)
-          cfg)
+          (registry/with-source-registry cfg))
          (redirect "/settings/ingestion"))))))
 
 (defn pull-ingestion-now [cfg]
@@ -229,5 +230,8 @@
     (require-tenant
      request
      (fn [tenant]
-       (ingestion/pull-now! (:tenant/id tenant) (path-id request) cfg)
+       (ingestion/pull-now!
+        (:tenant/id tenant)
+        (path-id request)
+        (registry/with-source-registry cfg))
        (redirect "/settings/ingestion")))))

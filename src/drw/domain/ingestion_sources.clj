@@ -1,45 +1,42 @@
 (ns drw.domain.ingestion-sources
-  (:require [drw.jobs.contract-lifecycle-backfill :as contract-poll]
-            [drw.jobs.invoice-recon-poll :as invoice-poll]
-            [drw.jobs.transaction-recon-poll :as transaction-poll]
-            [drw.jobs.webhook-engine-dlq-poll :as webhook-poll]
-            [drw.domain.state :as state])
+  (:require [drw.domain.state :as state])
   (:import [java.time Instant]
            [java.util UUID]))
 
-(def source-registry
+(def default-source-registry
   {:invoice-recon
    {:display-name "Invoice Reconciliation"
     :enabled-key :invoice-recon-enabled
     :url-key :invoice-recon-url
     :api-key-secret-ref "INVOICE_RECON_API_KEY"
     :interval-key :invoice-recon-poll-interval-seconds
-    :default-interval 600
-    :run-fn invoice-poll/run-once!}
+    :default-interval 600}
    :transaction-recon
    {:display-name "Transaction Reconciliation"
     :enabled-key :transaction-recon-enabled
     :url-key :transaction-recon-url
     :api-key-secret-ref "TRANSACTION_RECON_API_KEY"
     :interval-key :transaction-recon-poll-interval-seconds
-    :default-interval 900
-    :run-fn transaction-poll/run-once!}
+    :default-interval 900}
    :contract-lifecycle
    {:display-name "Contract Lifecycle"
     :enabled-key :contract-lifecycle-enabled
     :url-key :contract-lifecycle-url
     :api-key-secret-ref "CONTRACT_LIFECYCLE_API_KEY"
     :interval-key :contract-lifecycle-backfill-interval-seconds
-    :default-interval 900
-    :run-fn contract-poll/run-once!}
+    :default-interval 900}
    :webhook-engine
    {:display-name "Webhook Engine"
     :enabled-key :webhook-engine-enabled
     :url-key :webhook-engine-url
     :api-key-secret-ref "WEBHOOK_ENGINE_API_KEY"
     :interval-key :webhook-engine-dlq-poll-interval-seconds
-    :default-interval 1800
-    :run-fn webhook-poll/run-once!}})
+    :default-interval 1800}})
+
+(defn source-registry [cfg]
+  (merge-with merge
+              default-source-registry
+              (:ingestion-source-registry cfg)))
 
 (defn- now-date []
   (java.util.Date/from (Instant/now)))
@@ -47,8 +44,8 @@
 (defn- reject! [message data]
   (throw (ex-info message data)))
 
-(defn- require-source-system! [source-system]
-  (when-not (contains? source-registry source-system)
+(defn- require-source-system! [registry source-system]
+  (when-not (contains? registry source-system)
     (reject! "source-system is invalid"
              {:type :validation-error :field :source-system}))
   source-system)
@@ -67,7 +64,7 @@
    :filters {}})
 
 (defn- default-source [tenant-id source-system cfg]
-  (let [spec (get source-registry source-system)]
+  (let [spec (get (source-registry cfg) source-system)]
     {:ingestion-source/id (UUID/randomUUID)
      :ingestion-source/tenant-id tenant-id
      :ingestion-source/source-system source-system
@@ -79,7 +76,7 @@
      :ingestion-source/last-error nil}))
 
 (defn- ensure-source! [tenant-id source-system cfg]
-  (require-source-system! source-system)
+  (require-source-system! (source-registry cfg) source-system)
   (or (existing-source tenant-id source-system)
       (let [source (default-source tenant-id source-system cfg)]
         (swap! state/ingestion-sources*
@@ -88,7 +85,7 @@
 
 (defn list-sources [tenant-id cfg]
   (mapv #(ensure-source! tenant-id % cfg)
-        (keys source-registry)))
+        (keys (source-registry cfg))))
 
 (defn get-source
   ([tenant-id source-id] (get-source tenant-id source-id {}))
@@ -117,12 +114,15 @@
 
 (defn save-settings-by-system! [tenant-id source-system settings cfg]
   (let [source (ensure-source! tenant-id
-                               (require-source-system! source-system)
+                               (require-source-system!
+                                (source-registry cfg)
+                                source-system)
                                cfg)]
     (save-settings! tenant-id (:ingestion-source/id source) settings)))
 
 (defn- effective-cfg [cfg source]
-  (let [spec (get source-registry (:ingestion-source/source-system source))]
+  (let [spec (get (source-registry cfg)
+                  (:ingestion-source/source-system source))]
     (assoc cfg
            (:enabled-key spec) (:ingestion-source/is-enabled source)
            (:url-key spec) (get-in source [:ingestion-source/config
@@ -174,14 +174,35 @@
                (assoc :ingestion-source/last-error
                       (:ingestion-run/error run)))))))
 
+(defn- disabled-result [source]
+  {:tenant-id (:ingestion-source/tenant-id source)
+   :source-system (:ingestion-source/source-system source)
+   :status :disabled
+   :exceptions-attempted 0
+   :exceptions-stored 0
+   :exceptions-skipped 0
+   :exceptions-rejected 0
+   :source-refs []
+   :cursor (:ingestion-source/cursor source)
+   :error nil})
+
+(defn- require-run-fn! [cfg source]
+  (let [spec (get (source-registry cfg)
+                  (:ingestion-source/source-system source))]
+    (or (:run-fn spec)
+        (reject! "ingestion source runner is not configured"
+                 {:type :ingestion-source/runner-not-configured}))))
+
 (defn pull-now! [tenant-id source-id cfg]
   (let [source (or (get-source tenant-id source-id cfg)
                    (reject! "ingestion source not found"
                             {:type :ingestion-source/not-found}))
-        spec (get source-registry (:ingestion-source/source-system source))
         started (now-date)
-        result ((:run-fn spec) (effective-cfg cfg source)
-                               (pull-opts cfg source))
+        result (if-not (:ingestion-source/is-enabled source)
+                 (disabled-result source)
+                 ((require-run-fn! cfg source)
+                  (effective-cfg cfg source)
+                  (pull-opts cfg source)))
         finished (now-date)
         run (run-record result started finished)]
     (swap! state/ingestion-runs* assoc (:ingestion-run/id run) run)

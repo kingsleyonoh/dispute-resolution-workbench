@@ -1,6 +1,7 @@
 (ns drw.ui.ingestion
   (:require [clojure.string :as str]
-            [drw.domain.ingestion-sources :as ingestion]))
+            [drw.domain.ingestion-sources :as ingestion]
+            [drw.jobs.ingestion-registry :as registry]))
 
 (defn- source-title [source]
   (or (:ingestion-source/display-name source)
@@ -70,7 +71,8 @@
      [:p {:class "mt-3 text-sm text-slate-500"} "No ingestion runs yet."])])
 
 (defn settings-section [tenant-id cfg]
-  (let [sources (ingestion/list-sources tenant-id cfg)
+  (let [cfg (registry/with-source-registry cfg)
+        sources (ingestion/list-sources tenant-id cfg)
         runs (ingestion/list-runs tenant-id {})]
     [:div {:class "space-y-6"}
      [:section {:class "grid gap-4 md:grid-cols-2"}

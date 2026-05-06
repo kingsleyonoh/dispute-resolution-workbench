@@ -1,7 +1,8 @@
 (ns drw.api.ingestion
   (:require [drw.api.common :as api]
             [drw.api.serializers :as serializers]
-            [drw.domain.ingestion-sources :as ingestion]))
+            [drw.domain.ingestion-sources :as ingestion]
+            [drw.jobs.ingestion-registry :as registry]))
 
 (defn- source-id [request]
   (api/uuid-value (get-in request [:path-params :id])))
@@ -22,7 +23,8 @@
 
 (defn list-sources-handler [cfg]
   (fn [request]
-    (let [tenant-id (api/current-tenant-id request)]
+    (let [tenant-id (api/current-tenant-id request)
+          cfg (registry/with-source-registry cfg)]
       (api/ok {:sources (mapv serializers/ingestion-source
                               (ingestion/list-sources tenant-id cfg))
                :nextCursor nil}))))
@@ -31,6 +33,7 @@
   (fn [request]
     (api/with-domain-errors
       (let [tenant-id (api/current-tenant-id request)
+            cfg (registry/with-source-registry cfg)
             body (api/parse-body request)
             source (ingestion/save-settings-by-system!
                     tenant-id
@@ -44,6 +47,7 @@
   (fn [request]
     (api/with-domain-errors
       (let [tenant-id (api/current-tenant-id request)
+            cfg (registry/with-source-registry cfg)
             run (ingestion/pull-now! tenant-id (source-id request) cfg)]
         (api/created {:run (serializers/ingestion-run run)})))))
 

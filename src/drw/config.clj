@@ -25,7 +25,7 @@
         (keep parse-env-line)
         (str/split-lines (slurp path))))
 
-(defn- normalize-config [env]
+(defn- base-config [env]
   {:app-env (get env "APP_ENV")
    :port (parse-port (get env "PORT"))
    :database-url (get env "DATABASE_URL")
@@ -39,15 +39,19 @@
    :session-secret (get env "SESSION_SECRET")
    :self-registration-enabled (not= "false" (get env "SELF_REGISTRATION_ENABLED"
                                                  "true"))
-   :api-key-prefix (get env "API_KEY_PREFIX" "drw_live_")
-   :notification-hub-enabled (= "true" (get env "NOTIFICATION_HUB_ENABLED"))
+   :api-key-prefix (get env "API_KEY_PREFIX" "drw_live_")})
+
+(defn- workflow-config [env]
+  {:notification-hub-enabled (= "true" (get env "NOTIFICATION_HUB_ENABLED"))
    :notification-hub-url (get env "NOTIFICATION_HUB_URL")
    :notification-hub-api-key (get env "NOTIFICATION_HUB_API_KEY")
    :hub-ingress-secret (get env "HUB_INGRESS_SECRET")
    :workflow-engine-enabled (= "true" (get env "WORKFLOW_ENGINE_ENABLED"))
    :workflow-engine-url (get env "WORKFLOW_ENGINE_URL")
-   :workflow-engine-api-key (get env "WORKFLOW_ENGINE_API_KEY")
-   :invoice-recon-enabled (env-true? env "INVOICE_RECON_ENABLED")
+   :workflow-engine-api-key (get env "WORKFLOW_ENGINE_API_KEY")})
+
+(defn- adapter-config [env]
+  {:invoice-recon-enabled (env-true? env "INVOICE_RECON_ENABLED")
    :invoice-recon-url (get env "INVOICE_RECON_URL")
    :invoice-recon-api-key (get env "INVOICE_RECON_API_KEY")
    :invoice-recon-poll-interval-seconds
@@ -71,6 +75,11 @@
    :webhook-engine-api-key (get env "WEBHOOK_ENGINE_API_KEY")
    :webhook-engine-dlq-poll-interval-seconds
    (parse-port (get env "WEBHOOK_ENGINE_DLQ_POLL_INTERVAL_SECONDS" "1800"))})
+
+(defn- normalize-config [env]
+  (merge (base-config env)
+         (workflow-config env)
+         (adapter-config env)))
 
 (defn load-config
   ([] (load-config {:env (System/getenv)}))

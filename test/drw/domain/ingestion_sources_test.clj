@@ -2,7 +2,11 @@
   (:require [clojure.test :refer [deftest is]]
             [drw.domain.ingestion-sources :as ingestion]
             [drw.domain.state :as state]
-            [drw.fixtures :as fixtures]))
+            [drw.fixtures :as fixtures]
+            [drw.jobs.contract-lifecycle-backfill :as contract-poll]
+            [drw.jobs.invoice-recon-poll :as invoice-poll]
+            [drw.jobs.transaction-recon-poll :as transaction-poll]
+            [drw.jobs.webhook-engine-dlq-poll :as webhook-poll]))
 
 (def tenants (fixtures/tenants-by-slug))
 (def tenant-a (:tenant/id (get tenants "acme-gmbh-de")))
@@ -57,6 +61,11 @@
     :transaction-recon (fn [_] {:status 200 :body transaction-body})
     :contract-lifecycle (fn [_] {:status 200 :body contract-body})
     :webhook-engine (fn [_] {:status 200 :body webhook-body})}
+   :ingestion-source-registry
+   {:invoice-recon {:run-fn invoice-poll/run-once!}
+    :transaction-recon {:run-fn transaction-poll/run-once!}
+    :contract-lifecycle {:run-fn contract-poll/run-once!}
+    :webhook-engine {:run-fn webhook-poll/run-once!}}
    :ingestion-max-attempts 1})
 
 (defn- reset-domain! []
