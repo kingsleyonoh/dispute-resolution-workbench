@@ -86,6 +86,7 @@
       :counterparty/not-found (not-found "Counterparty not found")
       :ingestion-source/not-found (not-found "Ingestion source not found")
       :playbook/not-found (not-found "Playbook not found")
+      :report/dispute-not-found (not-found "Dispute not found")
       :exception/duplicate-source-ref (conflict message)
       :counterparty/duplicate-normalized-name (conflict message)
       :playbook/duplicate-code (conflict message)

@@ -159,6 +159,13 @@
                :class "mt-3 w-full rounded border px-3 py-2"}]
    [:button {:class "mt-3 rounded bg-slate-950 px-4 py-2 text-white"} "Comment"]])
 
+(defn- report-link [id]
+  [:section {:class "rounded border bg-white p-4"}
+   [:h2 {:class "font-semibold"} "Audit report"]
+   [:a {:href (str "/disputes/" id "/audit-pdf")
+        :class "mt-3 inline-block rounded bg-slate-950 px-4 py-2 text-white"}
+    "Download PDF"]])
+
 (defn dispute-detail-page [tenant-id dispute-id error]
   (let [dispute (disputes/get-by-id tenant-id dispute-id)
         exceptions (exceptions/list-by-tenant tenant-id {:dispute-id dispute-id})
@@ -183,6 +190,7 @@
                          (comment-form dispute-id)
                          (exception-form dispute-id)]
                         (resolution-page/start-section tenant-id dispute-id)
+                        (report-link dispute-id)
                         [:section {:class "rounded border bg-white p-5"}
                          [:h2 {:class "font-semibold"} "Exceptions"]
                          (into [:ul {:class "mt-3 space-y-2 text-sm"}]

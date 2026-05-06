@@ -34,6 +34,8 @@
            (:ui-playbooks-disable routes-by-name)))
     (is (= {:path "/disputes/:id/start-resolution" :method :post}
            (:ui-disputes-start-resolution routes-by-name)))
+    (is (= {:path "/disputes/:id/audit-pdf" :method :get}
+           (:ui-disputes-audit-pdf routes-by-name)))
     (is (= {:path "/api/tenants/register" :method :post}
            (:tenant-register routes-by-name)))
     (is (= {:path "/api/tenants/me" :method :get}
@@ -50,6 +52,8 @@
            (:disputes-get routes-by-name)))
     (is (= {:path "/api/disputes/:id/start-resolution" :method :post}
            (:disputes-start-resolution routes-by-name)))
+    (is (= {:path "/api/disputes/:id/audit-pdf" :method :get}
+           (:disputes-audit-pdf routes-by-name)))
     (is (= {:path "/api/exceptions" :method :post}
            (:exceptions-create routes-by-name)))
     (is (= {:path "/api/exceptions/from-hub" :method :post}

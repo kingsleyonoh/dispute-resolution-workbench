@@ -1,11 +1,14 @@
 (ns drw.api.disputes
   (:require [drw.api.common :as api]
+            [drw.api.responses :as responses]
             [drw.api.serializers :as serializers]
             [drw.domain.disputes :as disputes]
             [drw.domain.exceptions :as exceptions]
             [drw.domain.hub-events :as hub-events]
             [drw.domain.playbooks :as playbooks]
-            [drw.domain.resolution :as resolution]))
+            [drw.domain.reports :as reports]
+            [drw.domain.resolution :as resolution]
+            [drw.fixtures :as fixtures]))
 
 (defn- dispute-id [request]
   (api/uuid-value (get-in request [:path-params :id])))
@@ -146,3 +149,31 @@
         (api/created {:executionId (:execution-id result)
                       :workflowId (:workflow-id result)
                       :dispute (serializers/dispute dispute)})))))
+
+(defn- tenant-source [cfg]
+  (or (:tenant-source cfg) (fixtures/load-tenants)))
+
+(defn- pdf-bytes [report]
+  (java.nio.file.Files/readAllBytes
+   (.toPath (java.io.File. (:report/storage-path report)))))
+
+(defn audit-pdf-handler [cfg]
+  (fn [request]
+    (api/with-domain-errors
+      (let [tenant-id (api/current-tenant-id request)
+            report (reports/generate-dispute-audit-pdf!
+                    cfg
+                    (tenant-source cfg)
+                    tenant-id
+                    (dispute-id request)
+                    (api/actor request))]
+        (if (= :ready (:report/status report))
+          {:status 200
+           :headers {"Content-Type" "application/pdf"
+                     "Content-Disposition"
+                     (str "attachment; filename=\""
+                          (:report/id report)
+                          ".pdf\"")}
+           :body (pdf-bytes report)}
+          (responses/error-response 500 "REPORT_GENERATION_FAILED"
+                                    (:report/error report)))))))

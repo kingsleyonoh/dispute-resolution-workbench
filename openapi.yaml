@@ -432,8 +432,28 @@ paths:
           description: Dispute or playbook not found
         "409":
           description: Resolution already running
-        "422":
-          $ref: "#/components/responses/IllegalStatusTransition"
+          "422":
+            $ref: "#/components/responses/IllegalStatusTransition"
+  /api/disputes/{id}/audit-pdf:
+    get:
+      summary: Generate and download a dispute audit PDF
+      operationId: downloadDisputeAuditPdf
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: PDF audit artifact
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: Dispute not found
+        "500":
+          description: Report generation failed
   /api/correlations/{id}/reject:
     post:
       summary: Reject a pending correlation without attaching its exception

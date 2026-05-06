@@ -16,6 +16,7 @@
             [drw.ui.handlers :as ui]
             [drw.ui.ingestion-handlers :as ui-ingestion]
             [drw.ui.playbook-handlers :as ui-playbooks]
+            [drw.ui.report-handlers :as ui-reports]
             [drw.ui.resolution-handlers :as ui-resolution]))
 
 (defn- api-chain [cfg handler]
@@ -54,6 +55,9 @@
     ["/disputes/:id/start-resolution" :post
      (page-chain (ui-resolution/start-resolution cfg))
      :route-name :ui-disputes-start-resolution]
+    ["/disputes/:id/audit-pdf" :get
+     (page-chain (ui-reports/audit-pdf cfg))
+     :route-name :ui-disputes-audit-pdf]
     ["/counterparties" :get (page-chain ui/counterparties-list)
      :route-name :ui-counterparties-list]
     ["/counterparties/:id" :get (page-chain ui/counterparty-detail)
@@ -127,6 +131,9 @@
     ["/api/disputes/:id/start-resolution" :post
      (api-chain cfg (disputes/start-resolution-handler cfg))
      :route-name :disputes-start-resolution]
+    ["/api/disputes/:id/audit-pdf" :get
+     (api-chain cfg (disputes/audit-pdf-handler cfg))
+     :route-name :disputes-audit-pdf]
     ["/api/exceptions" :get
      (api-chain cfg (exceptions/list-handler cfg))
      :route-name :exceptions-list]

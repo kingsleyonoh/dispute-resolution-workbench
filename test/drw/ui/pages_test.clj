@@ -77,6 +77,10 @@
     (is (str/includes? detail-html "Add comment"))
     (is (str/includes? detail-html "Attach manual exception"))
     (is (str/includes? detail-html "Start resolution"))
+    (is (str/includes? detail-html "Download PDF"))
+    (is (str/includes? detail-html
+                       (str "/disputes/" (:dispute/id dispute)
+                            "/audit-pdf")))
     (is (str/includes? detail-html "Credit note and refund"))
     (is (str/includes? detail-html (:exception/source-ref exception)))
     (is (str/includes? counterparties-html "Counterparties"))
