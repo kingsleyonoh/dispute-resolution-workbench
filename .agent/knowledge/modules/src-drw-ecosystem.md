@@ -7,7 +7,7 @@ Provides safe client boundaries for optional Notification Hub events, Workflow E
 ## Key files
 
 - `src/drw/ecosystem/hub_client.clj` - Notification Hub event normalization, config validation, and injected send hook.
-- `src/drw/ecosystem/workflow_client.clj` - Workflow Engine execute endpoint construction, snake-case payload conversion, injected send hook, and disabled-safe execution status lookup.
+- `src/drw/ecosystem/workflow_client.clj` - Workflow Engine execute endpoint construction, workflow id metadata, snake-case payload conversion, injected send hook, and disabled-safe execution status lookup.
 - `src/drw/ecosystem/nats_connection.clj` - disabled-safe NATS connect/publish/subscribe/close boundary that validates URL and injected client functions without adding a NATS dependency.
 - `test/drw/ecosystem/clients_test.clj` - disabled, missing-config, enabled-stub, and injected-send contracts.
 - `test/drw/ecosystem/nats_connection_test.clj` - disabled-safe connect, missing-config, injected client option, publish, subscribe, and close contracts.

@@ -11,8 +11,10 @@ Defines the server-rendered Hiccup/Tailwind operator console: login, dashboard, 
 - `src/drw/ui/correlations.clj` - pending correlation queue section with accept/reject POST forms.
 - `src/drw/ui/ingestion.clj` - source setting forms, pull-now buttons, and recent ingestion run table.
 - `src/drw/ui/playbooks.clj` - playbook settings page with add/edit/disable forms.
+- `src/drw/ui/resolution.clj` - dispute-detail Start Resolution panel backed by active tenant playbooks.
 - `src/drw/ui/handlers.clj` - Pedestal page handlers for login/logout, tenant-gated pages, and POST/303 operator actions including correlation decisions and ingestion settings.
 - `src/drw/ui/playbook_handlers.clj` - tenant-gated Playbooks settings GET/POST handlers with CSRF validation.
+- `src/drw/ui/resolution_handlers.clj` - CSRF-protected UI start-resolution POST handler.
 - `src/drw/ui/request.clj` - URL-encoded form parser plus UUID, keyword, long, and instant coercion helpers.
 - `src/drw/ui/session.clj` - process-local UI sessions keyed by `drw_session`, with `X-DRW-Session` and `X-API-Key` lookup support.
 - `resources/assets/styles/app.css` - Tailwind input stylesheet.
@@ -23,6 +25,7 @@ Defines the server-rendered Hiccup/Tailwind operator console: login, dashboard, 
 - `test/drw/ui/playbooks_test.clj` - playbook settings rendering behavior.
 - `test/drw/e2e_api/ui_flow_test.clj` - real HTTP operator flow through login, create, assign, transition, comment, attach exception, counterparty pages, correlation review, and ingestion settings.
 - `test/drw/e2e_api/ui_playbooks_flow_test.clj` - real HTTP Playbooks settings add/disable flow.
+- `test/drw/e2e_api/ui_start_resolution_flow_test.clj` - real HTTP dispute-detail start-resolution form flow.
 
 ## Dependencies
 
